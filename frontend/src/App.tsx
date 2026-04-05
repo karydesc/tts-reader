@@ -3,7 +3,7 @@ import FloatingControlBar from "./components/FloatingControlBar";
 import IconButton from "./components/IconButton";
 import ReadingCanvas from "./components/ReadingCanvas";
 
-import "./styles/index.css"
+import "./styles/App.css"
 
 
 export default function App(){
