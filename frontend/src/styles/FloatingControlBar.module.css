@@ -1,0 +1,16 @@
+.container{
+    position: fixed;
+    bottom: 3%;
+    padding: 10px 14px;
+    min-width: 50vw;
+    display: flex;
+    justify-content:left;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(60, 87, 196, 0.88);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(20, 30, 80, 0.18);
+}
+

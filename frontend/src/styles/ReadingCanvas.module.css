@@ -1,0 +1,11 @@
+.canvas{
+    color: white;
+    margin: 3vh 0 0 0;
+    padding: 15px;
+    border-radius: 18px;
+    width: 90vw;
+    max-width: 800px;
+    min-height: 80vh;
+    background: linear-gradient(#091f55, #357cc7);
+    border: 3px solid silver;
+}

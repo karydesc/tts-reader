@@ -1,0 +1,35 @@
+.icon_button {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  line-height: 0;
+  appearance: none;
+
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  color: white;
+
+  border-radius: 50%;
+  font-weight: 600;
+  box-shadow: 0 12px 28px rgba(20, 30, 80, 0.18);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.icon_button svg{
+  transform: translateX(1px);
+  width: 36px;
+  height: 36px;
+}
+.icon_button:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.icon_button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
+}
+
