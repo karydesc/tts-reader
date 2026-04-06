@@ -1,6 +1,6 @@
 # Text-To-Speech Reader 
 (A Work in Progress)
-A responsive, full-stack web application designed to enhance reading comprehension and accessibility. It transforms written content into an interactive auditory experience by combining native Text-to-Speech with real-time word highlighting. This is built as an active, hands-on learning project to master modern full-stack architecture using React, TypeScript, and Spring Boot.
+A responsive, full-stack web application designed to enhance reading comprehension and accessibility. It transforms written content into an interactive auditory experience by combining native Text-to-Speech with real-time word highlighting. This is built as an active, hands-on learning project to master modern full-stack architecture using React, TypeScript, and Spring Boot. The gsap library is also used for animations.
 
 **Status:** Currently learning ReactJS and building the frontend webapp
 
