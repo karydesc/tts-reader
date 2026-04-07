@@ -1,5 +1,5 @@
 import styles from "../styles/IconButton.module.css";
-import { ICON_MAP, type IconName } from "../assets/Icons.tsx"; 
+import { ICON_MAP, type IconName } from "../assets/Icons"; 
 
 type IconButtonProps = {
     icon: IconName; 

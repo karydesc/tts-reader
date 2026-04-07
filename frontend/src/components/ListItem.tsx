@@ -1,4 +1,4 @@
-import {ICON_MAP, type IconName} from "../assets/Icons.tsx";
+import {ICON_MAP, type IconName} from "../assets/Icons";
 import styles from "../styles/ListItem.module.css"
 
 type ListItemProps = {
@@ -11,7 +11,7 @@ export default function ListItem( {text, onClick, rightIcon}: ListItemProps) {
     return (
         <div className={`${styles.ListItem}`} onClick={onClick}>
             {text}
-            <div style={{ flexGrow: 1 }}/>
+            <div className={styles.spacer} />
             {rightIcon ? ICON_MAP[rightIcon] : null}
         </div>
     )
