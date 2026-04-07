@@ -8,17 +8,19 @@ import ListItem from "./components/ListItem.tsx";
 
 export default function App(){
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
     function handleTogglePlay(){ setIsPlaying(!isPlaying); }
-    function handleToggleMenu(){ setIsMenuOpen(!isMenuOpen); }
+    function handleToggleMoreMenu(){ setIsMoreMenuOpen(!isMoreMenuOpen); }
+    function handleToggleUserMenu(){ setIsUserMenuOpen(!isUserMenuOpen); }
 
     return (
         <>
             <ReadingCanvas />
 
             <FloatingControlBar
-                isMenuOpen={isMenuOpen}
+                isMenuOpen={isMoreMenuOpen}
 
                 bar_children={
                     <>
@@ -26,16 +28,19 @@ export default function App(){
                         <IconButton icon={isPlaying ? "pause" : "play"} onClick={handleTogglePlay} />
                         <IconButton icon="forward" />
                         <div style={{ flexGrow: 1 }}/>
-                        <IconButton icon="more" onClick={handleToggleMenu} />
+                        <IconButton icon="more" onClick={handleToggleMoreMenu} />
+                        <IconButton icon="user" onClick={handleToggleUserMenu}/>
+
                     </>
                 }
-
                 menu_children={
                     <>
-                        <ListItem title="Hello 1" onClick={handleToggleMenu}/>
-                        <ListItem title="Hello 2" onClick={handleToggleMenu}/>
-                        <ListItem hasEndArrow={true} title="Back" onClick={handleToggleMenu}/>
+                        <ListItem rightIcon="colorpicker" text="App Theme"/>
+                        <ListItem rightIcon="upload" text="Upload File"/>
+                        <ListItem rightIcon="speed" text="Reading Speed"/>
 
+                        <div style={{ flexGrow: 1 }}/>
+                        <ListItem rightIcon="rightChevron" text="Return" onClick={handleToggleMoreMenu}/>
                     </>
                 }
             />

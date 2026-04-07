@@ -1,15 +1,18 @@
+import {ICON_MAP, type IconName} from "../assets/Icons.tsx";
 import styles from "../styles/ListItem.module.css"
+
 type ListItemProps = {
-    title: string;
+    text: string;
     onClick?: () => void;
-    hasEndArrow?: boolean;
+    hasEndChevron?: boolean;
+    rightIcon?: IconName;
 }
-export default function ListItem( {title, onClick, hasEndArrow = false}: ListItemProps) {
+export default function ListItem( {text, onClick, rightIcon}: ListItemProps) {
     return (
-        <div className={styles.ListItem} onClick={onClick}>
-            {title}
+        <div className={`${styles.ListItem}`} onClick={onClick}>
+            {text}
             <div style={{ flexGrow: 1 }}/>
-            {hasEndArrow? ">" : null}
+            {rightIcon ? ICON_MAP[rightIcon] : null}
         </div>
     )
 }

@@ -1,24 +1,32 @@
 .ListItem {
     display: flex;
+    gap: 0.5rem;
     padding: 0.5rem;
-    gap:0.5rem;
+    font-size: medium;
+    margin: 0;
     width: 90%;
     align-content: center;
+    text-align: center;
     color: white;
     border-radius: 0.5rem;
+    transition: ease 0.1s;
+    align-items: center;
 
 
 }
 .ListItem:hover {
-    transform: scale(1.05);
     background: rgba(255, 255, 255, 0.28);
     transition: ease 0.1s;
 }
 .ListItem:active {
-    transform: scale(0.92);
+    transform: scale(0.99);
     transition: ease 0.1s;
 
 
+}
+.ListItem svg{
+    width: 24px;
+    height: 24px;
 }
 
 .ListItem:focus-visible {

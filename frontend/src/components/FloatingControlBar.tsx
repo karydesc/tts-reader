@@ -15,9 +15,9 @@ export default function FloatingControlBar({bar_children, menu_children, isMenuO
     useGSAP(()=>{
         if(!isMenuOpen){
             gsap.to(refContainer.current, {
-                width: "50vw",
+                width: "40vw",
                 height: "7vh",
-                borderRadius: "18px",
+                borderRadius: "60px",
                 ease: "expo.inOut",
                 duration: 0.5,
 
@@ -25,8 +25,8 @@ export default function FloatingControlBar({bar_children, menu_children, isMenuO
         }else{
             gsap.to(refContainer.current, {
                 width: "20vw",
-                height: "35vh",
-                borderRadius: "24px",
+                height: "50vh",
+                borderRadius: "18px",
                 duration: 0.5,
                 ease: "expo.inOut",
             })
@@ -35,15 +35,15 @@ export default function FloatingControlBar({bar_children, menu_children, isMenuO
     return(
         <div ref = {refContainer} className={styles.pill}>
 
-            {/* The Bar Layer */}
             <div className={`${styles.bar} ${styles.layer} ${isMenuOpen ? styles.hidden : styles.visible}`}>
                 {bar_children}
             </div>
 
-            {/* The Menu Layer */}
             <div className={`${styles.menu} ${styles.layer} ${isMenuOpen ? styles.visible : styles.hidden}`}>
                 {menu_children}
             </div>
+
+
 
         </div>
     )
