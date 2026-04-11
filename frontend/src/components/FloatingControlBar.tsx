@@ -5,24 +5,22 @@ import {type ReactNode, useRef} from "react"
 
 
 type FloatingControlBarProps = {
-    isMenuOpen: boolean
     bar: ReactNode
     menu: ReactNode
+    shouldRenderMenu: boolean
 }
 gsap.registerPlugin(useGSAP);
-
-export default function FloatingControlBar({isMenuOpen, bar, menu}:FloatingControlBarProps) {
+export default function FloatingControlBar({bar, menu, shouldRenderMenu}:FloatingControlBarProps) {
     const refContainer = useRef<HTMLDivElement>(null)
     useGSAP(()=>{
         if (!refContainer.current) return;
-        if(!isMenuOpen){
+        if(!shouldRenderMenu){
             gsap.to(refContainer.current, {
                 width: "40vw",
                 height: "7vh",
                 borderRadius: "60px",
                 ease: "expo.inOut",
                 duration: 0.5,
-
             })
         }else{
             gsap.to(refContainer.current, {
@@ -33,20 +31,18 @@ export default function FloatingControlBar({isMenuOpen, bar, menu}:FloatingContr
                 ease: "expo.inOut",
             })
         }
-    }, {dependencies: [isMenuOpen]})
+    }, {dependencies: [shouldRenderMenu]})
 
     return(
         <div ref = {refContainer} className={styles.pill}>
 
-            <div className={`${styles.bar} ${styles.layer} ${isMenuOpen ? styles.hidden : styles.visible}`}>
+            <div className={`${styles.bar} ${styles.layer} ${shouldRenderMenu ? styles.hidden : styles.visible}`}>
                 {bar}
             </div>
 
-            <div className={`${styles.menu} ${styles.layer} ${isMenuOpen ? styles.visible : styles.hidden}`}>
+            <div className={`${styles.menu} ${styles.layer} ${shouldRenderMenu ? styles.visible : styles.hidden}`}>
                 {menu}
             </div>
-
-
 
         </div>
     )

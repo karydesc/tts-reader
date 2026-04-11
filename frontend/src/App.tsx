@@ -1,28 +1,99 @@
-import { useState } from 'react';
-import FloatingControlBar from "./components/FloatingControlBar";
-import ReadingCanvas from "./components/ReadingCanvas";
-import MenuItems from "./components/MenuItems"
+import {useState} from 'react';
 import "./styles/App.css"
-import BarItems from "./components/BarItems";
+import type { MenuItem } from "./MenuItem.ts";
+import ReadingCanvas from "./components/ReadingCanvas.tsx";
+import Menu from "./components/Menu.tsx";
+import FloatingControlBar from "./components/FloatingControlBar.tsx";
+import BarItems from "./components/BarItems.tsx";
 
-export default function App(){
+
+const SettingsMenu: MenuItem[] = [
+    {
+        label: "App Theme",
+        icon: "colorpicker",
+        submenu: [
+            { label: "Light", action: () => console.log("light") },
+            { label: "Dark", action: () => console.log("dark") },
+        ]
+    },
+    {
+        label: "Upload File",
+        icon: "upload",
+        action: () => console.log("upload")
+    },
+    {
+        label: "Reading Speed",
+        icon: "speed",
+        submenu: [
+            { label: "Slow", action: () => console.log("slow") },
+            { label: "Normal", action: () => console.log("normal") },
+            { label: "Fast", action: () => console.log("fast") },
+        ],
+        action: () => console.log("Action")
+    }
+];
+
+
+
+
+
+export default function App() {
+    const [menuStack, setMenuStack] = useState<MenuItem[][]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-    // const [isUserMen .uOpen, setIsUserMenuOpen] = useState(false);
+    const [shouldRenderMenu, renderMenuItems] = useState(false);
 
-    function handleTogglePlay(){ setIsPlaying(prev => !prev); }
-    function handleToggleMoreMenu(){ setIsMoreMenuOpen(prev => !prev); }
-    // function handleToggleUserMenu(){ setIsUserMenuOpen(!isUserMenuOpen); }
+    function togglePlay() {
+        setIsPlaying(prevState => !prevState);
+    }
 
+    function openMenu(root: MenuItem[]) {
+        setMenuStack([root]);
+        renderMenuItems(true);
+    }
+
+    function closeMenu() {
+        renderMenuItems(false);
+        setTimeout(() => {
+            setMenuStack([]);
+        }, 300); // match animation
+    }
+
+    function handleMenuItemClick(item: MenuItem) {
+        if (item.submenu) {
+            setMenuStack(prev => [...prev, item.submenu!]);
+        } else {
+            item.action?.();
+        }
+    }
+
+    function handleBack() {
+        if (menuStack.length == 1) { // if we
+            closeMenu();
+            return;
+        }
+        setMenuStack(prev => prev.slice(0, -1));
+    }
     return (
         <>
-            <ReadingCanvas />
-
+            <ReadingCanvas isPlaying={isPlaying} />
             <FloatingControlBar
-                isMenuOpen={isMoreMenuOpen}
-                bar={<BarItems isPlaying={isPlaying} handleToggleMoreMenu={handleToggleMoreMenu} handleTogglePlay={handleTogglePlay} />}
-                menu={<MenuItems handleToggleMoreMenu={handleToggleMoreMenu}/>}
+                shouldRenderMenu={shouldRenderMenu}
+                bar={
+                    <BarItems
+                        onOpenSettingsMenu={()=>{openMenu(SettingsMenu)}}
+                        onOpenUserMenu={()=>{}}
+                        handleTogglePlay={togglePlay}
+                        isPlaying={isPlaying}
+                    />
+                }
+                menu={
+                    <Menu
+                        items={menuStack.at(-1) ?? []}
+                        onItemClick={handleMenuItemClick}
+                        onBack={handleBack}
+                        canGoBack={menuStack.length > 1}
+                    />
+                }
             />
         </>
-    )
-}
+    );}

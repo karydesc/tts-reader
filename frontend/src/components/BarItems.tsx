@@ -1,20 +1,20 @@
 import IconButton from "./IconButton";
 
 type Props = {
-    handleToggleMoreMenu: () => void;
-    handleToggleUserMenu?: () => void;
     handleTogglePlay: () => void;
+    onOpenUserMenu: () => void;
+    onOpenSettingsMenu: () => void;
     isPlaying: boolean;
 }
 
-export default function BarItems({handleToggleMoreMenu, handleToggleUserMenu, handleTogglePlay, isPlaying}: Props) {
+export default function BarItems({onOpenUserMenu, onOpenSettingsMenu, handleTogglePlay, isPlaying}: Props) {
     return (<>
         <IconButton icon="rewind" />
         <IconButton icon={isPlaying ? "pause" : "play"} onClick={handleTogglePlay} />
         <IconButton icon="forward" />
         <div style={{ flexGrow: 1 }}/>
-        <IconButton icon="more" onClick={handleToggleMoreMenu} />
-        <IconButton icon="user" onClick={handleToggleUserMenu}/>
+        <IconButton icon="more" onClick={onOpenSettingsMenu} />
+        <IconButton icon="user" onClick={onOpenUserMenu}/>
 
     </>)
 }
