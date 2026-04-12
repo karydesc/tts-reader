@@ -1,16 +1,18 @@
 .ListItem {
+    background: rgba(255, 255, 255, 0.1);
     display: flex;
     gap: 0.5rem;
     padding: 0.5rem;
     font-size: medium;
     margin: 0;
     width: 90%;
+    height: 2.5rem;
     align-content: center;
     text-align: center;
-    color: white;
     border-radius: 0.5rem;
     transition: ease 0.1s;
     align-items: center;
+
 
 
 }

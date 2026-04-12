@@ -1,0 +1,32 @@
+.row {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    display: flex;
+    width: 90%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    color: contrast-color(var(--floating-bar-background));
+}
+
+.row:hover {
+    background: rgba(255, 255, 255, 0.28);
+    transition: ease 0.1s;
+}
+.row:active {
+    transform: scale(0.99);
+    transition: ease 0.1s;
+
+
+}
+
+.input {
+    height: 2.5rem;
+    color: contrast-color(var(--floating-bar-background));
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    cursor: pointer;
+}

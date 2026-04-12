@@ -7,14 +7,14 @@ import {type ReactNode, useRef} from "react"
 type FloatingControlBarProps = {
     bar: ReactNode
     menu: ReactNode
-    shouldRenderMenu: boolean
+    isExpanded: boolean
 }
 gsap.registerPlugin(useGSAP);
-export default function FloatingControlBar({bar, menu, shouldRenderMenu}:FloatingControlBarProps) {
+export default function FloatingControlBar({bar, menu, isExpanded}:FloatingControlBarProps) {
     const refContainer = useRef<HTMLDivElement>(null)
     useGSAP(()=>{
         if (!refContainer.current) return;
-        if(!shouldRenderMenu){
+        if(!isExpanded){
             gsap.to(refContainer.current, {
                 width: "40vw",
                 height: "7vh",
@@ -31,16 +31,16 @@ export default function FloatingControlBar({bar, menu, shouldRenderMenu}:Floatin
                 ease: "expo.inOut",
             })
         }
-    }, {dependencies: [shouldRenderMenu]})
+    }, {dependencies: [isExpanded]})
 
     return(
         <div ref = {refContainer} className={styles.pill}>
 
-            <div className={`${styles.bar} ${styles.layer} ${shouldRenderMenu ? styles.hidden : styles.visible}`}>
+            <div className={`${styles.bar} ${styles.layer} ${isExpanded ? styles.hidden : styles.visible}`}>
                 {bar}
             </div>
 
-            <div className={`${styles.menu} ${styles.layer} ${shouldRenderMenu ? styles.visible : styles.hidden}`}>
+            <div className={`${styles.menu} ${styles.layer} ${isExpanded ? styles.visible : styles.hidden}`}>
                 {menu}
             </div>
 

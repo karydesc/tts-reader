@@ -1,99 +1,149 @@
-import {useState} from 'react';
+import {useState, type CSSProperties} from 'react';
 import "./styles/App.css"
-import type { MenuItem } from "./MenuItem.ts";
+import type { ActionMenuItem, MenuItem } from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
 import Menu from "./components/Menu.tsx";
 import FloatingControlBar from "./components/FloatingControlBar.tsx";
 import BarItems from "./components/BarItems.tsx";
 
-
-const SettingsMenu: MenuItem[] = [
-    {
-        label: "App Theme",
-        icon: "colorpicker",
-        submenu: [
-            { label: "Light", action: () => console.log("light") },
-            { label: "Dark", action: () => console.log("dark") },
-        ]
-    },
-    {
-        label: "Upload File",
-        icon: "upload",
-        action: () => console.log("upload")
-    },
-    {
-        label: "Reading Speed",
-        icon: "speed",
-        submenu: [
-            { label: "Slow", action: () => console.log("slow") },
-            { label: "Normal", action: () => console.log("normal") },
-            { label: "Fast", action: () => console.log("fast") },
-        ],
-        action: () => console.log("Action")
-    }
-];
-
-
-
-
+type ThemeState = {
+    appBackground: string;
+    floatingBarBackground: string;
+    canvasColor1: string;
+    canvasColor2: string;
+};
 
 export default function App() {
-    const [menuStack, setMenuStack] = useState<MenuItem[][]>([]);
+    const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [shouldRenderMenu, renderMenuItems] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [theme, setTheme] = useState<ThemeState>({
+        appBackground: "#a6d4ff",
+        floatingBarBackground: "#0b102f",
+        canvasColor1: "#091f55",
+        canvasColor2: "#357cc7",
+    });
+
+    function updateThemeColor(key: keyof ThemeState) {
+        return (value: string) => {
+            setTheme((prevState) => ({
+                ...prevState,
+                [key]: value,
+            }));
+        };
+
+    }
+
+    const settingsMenu: MenuItem[] = [
+        {
+            label: "App Theme",
+            icon: "colorpicker",
+            submenu: [
+                {
+                    kind: "colorPicker",
+                    label: "App Background",
+                    value: theme.appBackground,
+                    onChange: updateThemeColor("appBackground"),
+                },
+                {
+                    kind: "colorPicker",
+                    label: "Control Bar",
+                    value: theme.floatingBarBackground,
+                    onChange: updateThemeColor("floatingBarBackground"),
+                },
+                {
+                    kind: "colorPicker",
+                    label: "Canvas Top",
+                    value: theme.canvasColor1,
+                    onChange: updateThemeColor("canvasColor1"),
+                },
+                {
+                    kind: "colorPicker",
+                    label: "Canvas Bottom",
+                    value: theme.canvasColor2,
+                    onChange: updateThemeColor("canvasColor2"),
+                }
+            ],
+        },
+        {
+            label: "Upload File",
+            icon: "upload",
+            action: () => console.log("upload"),
+        },
+        {
+            label: "Reading Speed",
+            icon: "speed",
+            submenu: [
+                { label: "Slow", action: () => console.log("slow") },
+                { label: "Normal", action: () => console.log("normal") },
+                { label: "Fast", action: () => console.log("fast") },
+            ],
+            action: () => console.log("Action"),
+        },
+    ];
+
+    const themeVars = {
+        "--app-background": theme.appBackground,
+        "--floating-bar-background": theme.floatingBarBackground,
+        "--canvasColor1": theme.canvasColor1,
+        "--canvasColor2": theme.canvasColor2,
+    } as CSSProperties;
 
     function togglePlay() {
         setIsPlaying(prevState => !prevState);
     }
 
     function openMenu(root: MenuItem[]) {
-        setMenuStack([root]);
-        renderMenuItems(true);
+        setSettingsStack([root]);
+        setIsExpanded(true);
     }
 
     function closeMenu() {
-        renderMenuItems(false);
+        setIsExpanded(false);
         setTimeout(() => {
-            setMenuStack([]);
+            setSettingsStack([]);
         }, 300); // match animation
     }
 
-    function handleMenuItemClick(item: MenuItem) {
-        if (item.submenu) {
-            setMenuStack(prev => [...prev, item.submenu!]);
+    function handleMenuItemClick(item: ActionMenuItem) {
+        const submenu = item.submenu;
+
+        if (submenu) {
+            setSettingsStack(prev => [...prev, submenu]);
         } else {
             item.action?.();
         }
     }
 
     function handleBack() {
-        if (menuStack.length == 1) { // if we
+        if (settingsStack.length === 1) {
             closeMenu();
             return;
         }
-        setMenuStack(prev => prev.slice(0, -1));
+        setSettingsStack(prev => prev.slice(0, -1));
     }
     return (
-        <>
+        <div className="appShell" style={themeVars}>
             <ReadingCanvas isPlaying={isPlaying} />
             <FloatingControlBar
-                shouldRenderMenu={shouldRenderMenu}
+                isExpanded={isExpanded}
                 bar={
                     <BarItems
-                        onOpenSettingsMenu={()=>{openMenu(SettingsMenu)}}
-                        onOpenUserMenu={()=>{}}
+                        onOpenSettingsMenu={() => openMenu(settingsMenu)}
+                        onOpenUserMenu={() => {}}
                         handleTogglePlay={togglePlay}
                         isPlaying={isPlaying}
                     />
                 }
                 menu={
                     <Menu
-                        items={menuStack.at(-1) ?? []}
+                        items={settingsStack.at(-1) ?? []}
                         onItemClick={handleMenuItemClick}
                         onBack={handleBack}
-                        canGoBack={menuStack.length > 1}
+                        canGoBack={settingsStack.length > 1}
                     />
                 }
             />
-        </>
-    );}
+        </div>
+    );
+}
