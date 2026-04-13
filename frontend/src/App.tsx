@@ -1,10 +1,11 @@
 import {useState, type CSSProperties} from 'react';
 import "./styles/App.css"
-import type { ActionMenuItem, MenuItem } from "./Types.ts";
+import type {ActionMenuItem, MenuItem, PanelState} from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
 import Menu from "./components/Menu.tsx";
 import FloatingControlBar from "./components/FloatingControlBar.tsx";
 import BarItems from "./components/BarItems.tsx";
+import UserMenuItems from "./components/UserMenuItems.tsx";
 
 type ThemeState = {
     appBackground: string;
@@ -13,16 +14,24 @@ type ThemeState = {
     canvasColor2: string;
 };
 
+const defaultTheme: ThemeState = {
+    appBackground: "#a6d4ff",
+    floatingBarBackground: "#0b102f",
+    canvasColor1: "#091f55",
+    canvasColor2: "#357cc7",
+}
+
 export default function App() {
     const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false);
     const [theme, setTheme] = useState<ThemeState>({
         appBackground: "#a6d4ff",
         floatingBarBackground: "#0b102f",
         canvasColor1: "#091f55",
         canvasColor2: "#357cc7",
     });
+    const [panelState, setPanelState] = useState<PanelState>("closed")
+
 
     function updateThemeColor(key: keyof ThemeState) {
         return (value: string) => {
@@ -32,6 +41,9 @@ export default function App() {
             }));
         };
 
+    }
+    function resetThemeColor(){
+        setTheme(defaultTheme)
     }
 
     const settingsMenu: MenuItem[] = [
@@ -62,6 +74,11 @@ export default function App() {
                     label: "Canvas Bottom",
                     value: theme.canvasColor2,
                     onChange: updateThemeColor("canvasColor2"),
+                },
+                {
+                    kind: "action",
+                    label: "Reset Theme",
+                    action: resetThemeColor
                 }
             ],
         },
@@ -93,13 +110,13 @@ export default function App() {
         setIsPlaying(prevState => !prevState);
     }
 
-    function openMenu(root: MenuItem[]) {
-        setSettingsStack([root]);
-        setIsExpanded(true);
+    function openSettings() {
+        setSettingsStack([settingsMenu]);
+        setPanelState("settings");
     }
 
     function closeMenu() {
-        setIsExpanded(false);
+        setPanelState("closed");
         setTimeout(() => {
             setSettingsStack([]);
         }, 300); // match animation
@@ -126,11 +143,12 @@ export default function App() {
         <div className="appShell" style={themeVars}>
             <ReadingCanvas isPlaying={isPlaying} />
             <FloatingControlBar
-                isExpanded={isExpanded}
+                panelState={panelState}
+
                 bar={
                     <BarItems
-                        onOpenSettingsMenu={() => openMenu(settingsMenu)}
-                        onOpenUserMenu={() => {}}
+                        onOpenSettingsMenu={() => openSettings()}
+                        onOpenUserMenu={() => {setPanelState("user")}}
                         handleTogglePlay={togglePlay}
                         isPlaying={isPlaying}
                     />
@@ -142,6 +160,9 @@ export default function App() {
                         onBack={handleBack}
                         canGoBack={settingsStack.length > 1}
                     />
+                }
+                user = {
+                    <UserMenuItems/>
                 }
             />
         </div>

@@ -2,19 +2,21 @@ import styles from "../styles/FloatingControlBar.module.css"
 import gsap from "gsap"
 import { useGSAP } from '@gsap/react';
 import {type ReactNode, useRef} from "react"
+import type {PanelState} from "../Types.ts";
 
 
-type FloatingControlBarProps = {
+type Props = {
     bar: ReactNode
     menu: ReactNode
-    isExpanded: boolean
+    user: ReactNode
+    panelState: PanelState
 }
 gsap.registerPlugin(useGSAP);
-export default function FloatingControlBar({bar, menu, isExpanded}:FloatingControlBarProps) {
+export default function FloatingControlBar({bar, menu, user, panelState}:Props) {
     const refContainer = useRef<HTMLDivElement>(null)
     useGSAP(()=>{
         if (!refContainer.current) return;
-        if(!isExpanded){
+        if(panelState == "closed"){
             gsap.to(refContainer.current, {
                 width: "40vw",
                 height: "7vh",
@@ -31,18 +33,25 @@ export default function FloatingControlBar({bar, menu, isExpanded}:FloatingContr
                 ease: "expo.inOut",
             })
         }
-    }, {dependencies: [isExpanded]})
+    }, {dependencies: [panelState]})
 
     return(
         <div ref = {refContainer} className={styles.pill}>
 
-            <div className={`${styles.bar} ${styles.layer} ${isExpanded ? styles.hidden : styles.visible}`}>
+            <div className={`${styles.bar} ${styles.layer} ${panelState=="closed" ? styles.visible : styles.hidden}`}>
                 {bar}
             </div>
 
-            <div className={`${styles.menu} ${styles.layer} ${isExpanded ? styles.visible : styles.hidden}`}>
+            <div className={`${styles.menu} ${styles.layer} ${panelState=="settings" ? styles.visible : styles.hidden}`}>
                 {menu}
             </div>
+
+            <div className={`${styles.menu} ${styles.layer} ${panelState=="user" ? styles.visible : styles.hidden}`}>
+                {user}
+            </div>
+
+
+
 
         </div>
     )

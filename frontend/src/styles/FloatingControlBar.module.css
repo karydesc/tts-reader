@@ -8,6 +8,7 @@
     height: 7vh;
     background: var(--floating-bar-background, rgb(11 16 47 / 0.88));
     color: contrast-color(var(--floating-bar-background));
+    transition: background 0.3s ease, color 0.3s ease;
     backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.38);
     border-radius: 60px;
@@ -38,11 +39,29 @@
 .bar {
     flex-direction: row;
 }
-.userMenu{
+.userMenuContainer {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
 }
+.userMenuHeader{
+    display: flex;
+    justify-content: space-between;
+    border-radius: 60px;
+    border : 2px solid var(--appBackground);
+    /*background: var(--floating-bar-background, rgb(11 16 47 / 0.88));*/
+}
+.userStatisticsContainer {
+    display: flex;
+    justify-content: space-between;
+    border-radius: 60px;
+    border : 2px solid var(--appBackground);
+
+    /*background: var(--floating-bar-background, rgb(11 16 47 / 0.88));*/
+}
+
+
+
 .hidden{
     opacity: 0;
     pointer-events: none;
