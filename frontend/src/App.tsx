@@ -162,7 +162,7 @@ export default function App() {
                     />
                 }
                 user = {
-                    <UserMenuItems/>
+                    <UserMenuItems onBack={closeMenu}/>
                 }
             />
         </div>

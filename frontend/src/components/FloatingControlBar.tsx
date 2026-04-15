@@ -16,22 +16,36 @@ export default function FloatingControlBar({bar, menu, user, panelState}:Props) 
     const refContainer = useRef<HTMLDivElement>(null)
     useGSAP(()=>{
         if (!refContainer.current) return;
-        if(panelState == "closed"){
-            gsap.to(refContainer.current, {
-                width: "40vw",
-                height: "7vh",
-                borderRadius: "60px",
-                ease: "expo.inOut",
-                duration: 0.5,
-            })
-        }else{
-            gsap.to(refContainer.current, {
-                width: "20vw",
-                height: "50vh",
-                borderRadius: "18px",
-                duration: 0.5,
-                ease: "expo.inOut",
-            })
+        switch(panelState){
+            case "closed":
+                gsap.to(refContainer.current, {
+                    width: "40vw",
+                    height: "7vh",
+                    borderRadius: "60px",
+                    padding: "8px 10px",
+                    ease: "expo.inOut",
+                    duration: 0.5,
+                })
+                break;
+            case "settings":
+                gsap.to(refContainer.current, {
+                    width: "20vw",
+                    height: "50vh",
+                    borderRadius: "18px",
+                    padding: "8px 10px",
+                    duration: 0.5,
+                    ease: "expo.inOut",
+                })
+                break;
+            case "user":
+                gsap.to(refContainer.current, {
+                    width: "30vw",
+                    height: "50vh",
+                    padding: 0,
+                    borderRadius: "18px",
+                    duration: 0.5,
+                    ease: "expo.inOut",
+                })
         }
     }, {dependencies: [panelState]})
 
@@ -46,7 +60,7 @@ export default function FloatingControlBar({bar, menu, user, panelState}:Props) 
                 {menu}
             </div>
 
-            <div className={`${styles.menu} ${styles.layer} ${panelState=="user" ? styles.visible : styles.hidden}`}>
+            <div className={`${styles.userMenu} ${styles.layer} ${panelState=="user" ? styles.visible : styles.hidden}`}>
                 {user}
             </div>
 

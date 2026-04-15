@@ -10,12 +10,12 @@ type IconButtonProps = {
 
 export default function IconButton({ classParam = "", icon, onClick, image }: IconButtonProps) {
     return (
-        <button 
+        <button
             type="button" 
             className={`${styles.icon_button} ${classParam}`.trim()}
             onClick={onClick}
         >
-            {image ? (<img style={{width:"10px", height:"10px" }} src={image} alt=""/>) : ICON_MAP[icon!]}
+            {image ? (<img style={{width:"30px", height:"30px" }} src={image} alt=""/>) : ICON_MAP[icon!]}
 
         </button>
     );
