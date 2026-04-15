@@ -3,6 +3,7 @@
 A responsive, full-stack web application designed to enhance reading comprehension. It provides the user with an audio-visual experience by combining speech with real time highlighting. This is built as an active, hands-on learning project to master modern full-stack architecture using React, TypeScript, and Spring Boot. The gsap library is used for UI animations.
 
 **Status:** The desired functionality of the UI has been roughly achieved. Now I am going to start working on the TTS logic.
+
 **Done so far:** 
  - Implemented a base, responsive UI.
  - Implemented a settings menu with working theming and other options as well as a placeholder user menu.  
