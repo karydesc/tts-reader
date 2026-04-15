@@ -1,18 +1,17 @@
 # Text-To-Speech Reader 
 (A Work in Progress)
-A responsive, full-stack web application designed to enhance reading comprehension and accessibility. It transforms written content into an interactive auditory experience by combining native Text-to-Speech with real-time word highlighting. This is built as an active, hands-on learning project to master modern full-stack architecture using React, TypeScript, and Spring Boot. The gsap library is also used for animations.
+A responsive, full-stack web application designed to enhance reading comprehension. It provides the user with an audio-visual experience by combining speech with real time highlighting. This is built as an active, hands-on learning project to master modern full-stack architecture using React, TypeScript, and Spring Boot. The gsap library is used for UI animations.
 
-**Status:** Currently learning ReactJS and building the frontend webapp
-
+**Status:** The desired functionality of the UI has been roughly achieved. Now I am going to start working on the TTS logic.
 **Done so far:** 
  - Implemented a base, responsive UI.
+ - Implemented a settings menu with working theming and other options as well as a placeholder user menu.  
  
 **Goals:**
- - Implement the rest of the UI, including various settings and user menus.
  - Implement webapp logic for the Text-to-Speech engine (Web Speech API), word-by-word tracking, and dynamic state management.
  - Implement backend and support features such as
-	 - Remembering reading progress and previous open text
-	 - User library of texts
+	 - User Authentication
+	 - User library of texts and retenting of reading progress
 	 - Saving user preferences like reading speed, app theme and more
 	 - Uploading documents (pdf, docx) //will decide if plausible later
 	 - User statistics 
