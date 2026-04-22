@@ -9,11 +9,11 @@ type Props = {
 
 export default function BarItems({onOpenUserMenu, onOpenSettingsMenu, handleTogglePlay, isPlaying}: Props) {
     return (<>
-        <IconButton icon="rewind" />
-        <IconButton icon={isPlaying ? "pause" : "play"} onClick={handleTogglePlay} />
-        <IconButton icon="forward" />
-        <div style={{ flexGrow: 1 }}/>
-        <IconButton icon="more" onClick={onOpenSettingsMenu} />
+        <IconButton icon="rewind"/>
+        <IconButton icon={isPlaying ? "pause" : "play"} onClick={handleTogglePlay}/>
+        <IconButton icon="forward"/>
+        <div style={{flexGrow: 1}}/>
+        <IconButton icon="more" onClick={onOpenSettingsMenu}/>
         <IconButton icon="user" onClick={onOpenUserMenu}/>
 
     </>)

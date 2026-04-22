@@ -1,6 +1,6 @@
 import styles from "../styles/FloatingControlBar.module.css"
 import gsap from "gsap"
-import { useGSAP } from '@gsap/react';
+import {useGSAP} from '@gsap/react';
 import {type ReactNode, useRef} from "react"
 import type {PanelState} from "../Types.ts";
 
@@ -12,11 +12,11 @@ type Props = {
     panelState: PanelState
 }
 gsap.registerPlugin(useGSAP);
-export default function FloatingControlBar({bar, menu, user, panelState}:Props) {
+export default function FloatingControlBar({bar, menu, user, panelState}: Props) {
     const refContainer = useRef<HTMLDivElement>(null)
-    useGSAP(()=>{
+    useGSAP(() => {
         if (!refContainer.current) return;
-        switch(panelState){
+        switch (panelState) {
             case "closed":
                 gsap.to(refContainer.current, {
                     width: "40vw",
@@ -39,7 +39,7 @@ export default function FloatingControlBar({bar, menu, user, panelState}:Props) 
                 break;
             case "user":
                 gsap.to(refContainer.current, {
-                    width: "30vw",
+                    width: "25vw",
                     height: "50vh",
                     padding: 0,
                     borderRadius: "18px",
@@ -49,22 +49,22 @@ export default function FloatingControlBar({bar, menu, user, panelState}:Props) 
         }
     }, {dependencies: [panelState]})
 
-    return(
-        <div ref = {refContainer} className={styles.pill}>
+    return (
+        <div ref={refContainer} className={styles.pill}>
 
-            <div className={`${styles.bar} ${styles.layer} ${panelState=="closed" ? styles.visible : styles.hidden}`}>
+            <div className={`${styles.bar} ${styles.layer} ${panelState == "closed" ? styles.visible : styles.hidden}`}>
                 {bar}
             </div>
 
-            <div className={`${styles.menu} ${styles.layer} ${panelState=="settings" ? styles.visible : styles.hidden}`}>
+            <div
+                className={`${styles.menu} ${styles.layer} ${panelState == "settings" ? styles.visible : styles.hidden}`}>
                 {menu}
             </div>
 
-            <div className={`${styles.userMenu} ${styles.layer} ${panelState=="user" ? styles.visible : styles.hidden}`}>
+            <div
+                className={`${styles.userMenu} ${styles.layer} ${panelState == "user" ? styles.visible : styles.hidden}`}>
                 {user}
             </div>
-
-
 
 
         </div>

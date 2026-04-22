@@ -7,12 +7,12 @@ type ListItemProps = {
     leftIcon?: IconName;
     rightIcon?: IconName;
 }
-export default function ListItem( {text, onClick, leftIcon, rightIcon}: ListItemProps) {
+export default function ListItem({text, onClick, leftIcon, rightIcon}: ListItemProps) {
     return (
         <div className={`${styles.ListItem}`} onClick={onClick}>
             {leftIcon ? ICON_MAP[leftIcon] : null}
             {text}
-            <div className={styles.spacer} />
+            <div className={styles.spacer}/>
             {rightIcon ? ICON_MAP[rightIcon] : null}
         </div>
     )

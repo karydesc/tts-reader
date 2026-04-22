@@ -1,4 +1,4 @@
-import {useState, type CSSProperties} from 'react';
+import {useState, type CSSProperties, useEffect} from 'react';
 import "./styles/App.css"
 import type {ActionMenuItem, MenuItem, PanelState} from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
@@ -6,7 +6,14 @@ import Menu from "./components/Menu.tsx";
 import FloatingControlBar from "./components/FloatingControlBar.tsx";
 import BarItems from "./components/BarItems.tsx";
 import UserMenuItems from "./components/UserMenuItems.tsx";
+import * as React from "react";
 
+
+const canvasRef = React.createRef<HTMLDivElement>();
+let segments: {
+    index: number,
+    text: string
+}[];
 type ThemeState = {
     appBackground: string;
     floatingBarBackground: string;
@@ -42,9 +49,50 @@ export default function App() {
         };
 
     }
-    function resetThemeColor(){
+
+    function resetThemeColor() {
         setTheme(defaultTheme)
     }
+
+    function handlePlaying() {
+        let childCount = 0;
+        if (!canvasRef.current!.textContent) return;
+
+        const segmenter = new Intl.Segmenter("en", {granularity: "sentence"})
+        const text = canvasRef.current?.textContent;
+        canvasRef.current!.innerHTML = "";
+        segments = Array.from(segmenter.segment(text!)).map((seg, index) => (
+            {
+                index: index,
+                text: seg.segment
+            }));
+        segments.map((value) => {
+            if (value.text == "\n") {
+                const tempBr = document.createElement("br");
+                canvasRef.current!.append(tempBr);
+            } else if (value.text != "") {
+                const tempSpan = document.createElement("span");
+                tempSpan.id = `sentence_${childCount++}`;
+                tempSpan.classList.add("sentence");
+                tempSpan.textContent = value.text;
+                canvasRef.current!.appendChild(tempSpan)
+            }
+        })
+
+
+        function handleBoundary(ev: SpeechSynthesisEvent) {
+            console.log(canvasRef.current?.innerText.slice(ev.charIndex, ev.charIndex + ev.charLength));
+
+        }
+    }
+
+    useEffect(() => {
+        if (isPlaying) {
+            handlePlaying();
+        } else {
+            speechSynthesis.cancel()
+        }
+    }, [isPlaying])
 
     const settingsMenu: MenuItem[] = [
         {
@@ -79,7 +127,7 @@ export default function App() {
                     kind: "action",
                     label: "Reset Theme",
                     action: resetThemeColor
-                }
+                },
             ],
         },
         {
@@ -91,12 +139,18 @@ export default function App() {
             label: "Reading Speed",
             icon: "speed",
             submenu: [
-                { label: "Slow", action: () => console.log("slow") },
-                { label: "Normal", action: () => console.log("normal") },
-                { label: "Fast", action: () => console.log("fast") },
+                {label: "Slow", action: () => console.log("slow")},
+                {label: "Normal", action: () => console.log("normal")},
+                {label: "Fast", action: () => console.log("fast")},
             ],
             action: () => console.log("Action"),
         },
+        {
+            label: "Voices",
+        },
+        {
+            label: "Language"
+        }
     ];
 
     const themeVars = {
@@ -119,7 +173,7 @@ export default function App() {
         setPanelState("closed");
         setTimeout(() => {
             setSettingsStack([]);
-        }, 300); // match animation
+        }, 500); // need to wait for animation to finish, then reset the stack
     }
 
     function handleMenuItemClick(item: ActionMenuItem) {
@@ -139,16 +193,20 @@ export default function App() {
         }
         setSettingsStack(prev => prev.slice(0, -1));
     }
+
+
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas isPlaying={isPlaying} />
+            <ReadingCanvas isPlaying={isPlaying} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
 
                 bar={
                     <BarItems
                         onOpenSettingsMenu={() => openSettings()}
-                        onOpenUserMenu={() => {setPanelState("user")}}
+                        onOpenUserMenu={() => {
+                            setPanelState("user")
+                        }}
                         handleTogglePlay={togglePlay}
                         isPlaying={isPlaying}
                     />
@@ -161,7 +219,7 @@ export default function App() {
                         canGoBack={settingsStack.length > 1}
                     />
                 }
-                user = {
+                user={
                     <UserMenuItems onBack={closeMenu}/>
                 }
             />

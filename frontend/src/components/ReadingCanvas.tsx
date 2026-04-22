@@ -1,10 +1,14 @@
 import styles from '../styles/ReadingCanvas.module.css'
 
 type Prop = {
-    isPlaying: boolean;
+    isPlaying: boolean,
+    canvasRef: React.Ref<HTMLDivElement>,
 }
-export default function ReadingCanvas({isPlaying}: Prop) {
+export default function ReadingCanvas({isPlaying, canvasRef}: Prop) {
+
     return (
-        <div className={styles.canvas} contentEditable={!isPlaying}></div>
+        <div ref={canvasRef}
+             className={styles.canvas} contentEditable={isPlaying ? "false" : "plaintext-only"}>
+        </div>
     )
 }
