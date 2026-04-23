@@ -12,3 +12,9 @@
     border: 1px solid rgba(255, 255, 255, 0.38);
 
 }
+
+.canvas.highlight{
+    background-color: var(--canvasColor2);
+    transform: scale(1.01);
+    transition: all 0.3s ease;
+}

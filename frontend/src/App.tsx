@@ -78,8 +78,7 @@ export default function App() {
                 canvasRef.current!.appendChild(tempSpan)
             }
         })
-
-
+        
         function handleBoundary(ev: SpeechSynthesisEvent) {
             console.log(canvasRef.current?.innerText.slice(ev.charIndex, ev.charIndex + ev.charLength));
 
