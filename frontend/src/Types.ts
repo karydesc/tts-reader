@@ -32,3 +32,7 @@ export type AuthState =
 | { status: "anonymous" }
 | { status: "loading" }
 | { status: "authenticated"; user: { id: string; email: string } }
+
+export type SentenceItem =
+    | {isNewline: true; key: string}
+    | {isNewline: false; text: string; id: string; key: string}

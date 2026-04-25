@@ -1,6 +1,6 @@
 import {useState, type CSSProperties, useEffect} from 'react';
 import "./styles/App.css"
-import type {ActionMenuItem, MenuItem, PanelState} from "./Types.ts";
+import type {ActionMenuItem, MenuItem, PanelState, SentenceItem} from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
 import Menu from "./components/Menu.tsx";
 import FloatingControlBar from "./components/FloatingControlBar.tsx";
@@ -10,10 +10,8 @@ import * as React from "react";
 
 
 const canvasRef = React.createRef<HTMLDivElement>();
-let segments: {
-    index: number,
-    text: string
-}[];
+
+
 type ThemeState = {
     appBackground: string;
     floatingBarBackground: string;
@@ -29,6 +27,10 @@ const defaultTheme: ThemeState = {
 }
 
 export default function App() {
+
+    const [sentences, setSentences] = useState<SentenceItem[]>([]);
+    const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
+
     const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [theme, setTheme] = useState<ThemeState>({
@@ -55,35 +57,33 @@ export default function App() {
     }
 
     function handlePlaying() {
-        let childCount = 0;
         if (!canvasRef.current!.textContent) return;
-
-        const segmenter = new Intl.Segmenter("en", {granularity: "sentence"})
         const text = canvasRef.current?.textContent;
-        canvasRef.current!.innerHTML = "";
-        segments = Array.from(segmenter.segment(text!)).map((seg, index) => (
-            {
-                index: index,
-                text: seg.segment
-            }));
-        segments.map((value) => {
-            if (value.text == "\n") {
-                const tempBr = document.createElement("br");
-                canvasRef.current!.append(tempBr);
-            } else if (value.text != "") {
-                const tempSpan = document.createElement("span");
-                tempSpan.id = `sentence_${childCount++}`;
-                tempSpan.classList.add("sentence");
-                tempSpan.textContent = value.text;
-                canvasRef.current!.appendChild(tempSpan)
+        setCurrentSentenceID('0');
+        setSentences([]);
+        const segmenter = new Intl.Segmenter("en", {granularity: "sentence"})
+        const segments = Array.from(segmenter.segment(text!));
+
+        let childCount = 0;
+
+        const newSentences = segments.map((seg, index): SentenceItem => {
+            if (seg.segment === "\n") {
+                return {
+                    isNewline: true,
+                    key: `${index}_${childCount}` };
             }
-        })
+            return {
+                isNewline: false,
+                text: seg.segment,
+                id: (childCount++).toString(),
+                key: `${index}_${seg.segment.slice(0,15)}`,
+            }
+        });
 
-        function handleBoundary(ev: SpeechSynthesisEvent) {
-            console.log(canvasRef.current?.innerText.slice(ev.charIndex, ev.charIndex + ev.charLength));
-
-        }
+        setSentences(newSentences);
     }
+
+
 
     useEffect(() => {
         if (isPlaying) {
@@ -196,7 +196,7 @@ export default function App() {
 
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas isPlaying={isPlaying} canvasRef={canvasRef}/>
+            <ReadingCanvas currentSentenceID={currentSentenceID} sentences={sentences} isPlaying={isPlaying} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
 

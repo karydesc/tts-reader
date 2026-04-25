@@ -1,0 +1,17 @@
+.sentence {
+    /*display: inline-block;*/
+    transition: padding ease 0.2s, margin ease 0.2s, background-color ease 0.2s, transform ease 0.2s;
+}
+
+.sentence.highlighted,.sentence:hover{
+    background-color: rgb(241, 241, 241, 0.3);
+    border: 1px solid rgb(241, 241, 241, 0.3);
+    border-radius: 3px;
+    transform: scale(1.1);
+    transition: background-color ease 0.2s, transform ease 0.2s;
+}
+.sentence:hover {
+    /*margin: 0.5rem;*/
+    padding: 0.01rem;
+    transition: margin ease 0.2s
+}
