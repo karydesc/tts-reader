@@ -34,5 +34,4 @@ export type AuthState =
 | { status: "authenticated"; user: { id: string; email: string } }
 
 export type SentenceItem =
-    | {isNewline: true; key: string}
-    | {isNewline: false; text: string; id: string; key: string}
+    {isNewline: boolean; text: string; id: string; key: string}

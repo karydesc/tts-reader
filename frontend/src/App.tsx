@@ -10,7 +10,7 @@ import * as React from "react";
 
 
 const canvasRef = React.createRef<HTMLDivElement>();
-
+let childCount = 0;
 
 type ThemeState = {
     appBackground: string;
@@ -25,6 +25,7 @@ const defaultTheme: ThemeState = {
     canvasColor1: "#091f55",
     canvasColor2: "#357cc7",
 }
+
 
 export default function App() {
 
@@ -56,38 +57,55 @@ export default function App() {
         setTheme(defaultTheme)
     }
 
-    function handlePlaying() {
-        if (!canvasRef.current!.textContent) return;
-        const text = canvasRef.current?.textContent;
-        setCurrentSentenceID('0');
-        setSentences([]);
+    function handleSegmentation(): SentenceItem[] {
+        childCount = 0;
+        const text = canvasRef.current!.textContent;
         const segmenter = new Intl.Segmenter("en", {granularity: "sentence"})
         const segments = Array.from(segmenter.segment(text!));
-
-        let childCount = 0;
-
         const newSentences = segments.map((seg, index): SentenceItem => {
             if (seg.segment === "\n") {
                 return {
+                    id: "", text: "",
                     isNewline: true,
-                    key: `${index}_${childCount}` };
+                    key: `${index}` };
             }
             return {
                 isNewline: false,
                 text: seg.segment,
                 id: (childCount++).toString(),
-                key: `${index}_${seg.segment.slice(0,15)}`,
+                key: `${index}`,
             }
         });
-
         setSentences(newSentences);
+        return newSentences;
     }
 
+    function handlePlayback(startIndex: number, freshSentences?: SentenceItem[]) {
+        speechSynthesis.cancel();
+
+        // If we passed fresh sentences, use them. Otherwise, use the state!
+        const activeSentences = freshSentences || sentences;
+
+        const remainingSentences = activeSentences.slice(startIndex);
+
+        for (const sentence of remainingSentences) {
+            if (sentence.isNewline) continue;
+
+            const utterance = new SpeechSynthesisUtterance(sentence.text);
+
+            utterance.onboundary = () => {
+                setCurrentSentenceID(sentence.id!);
+            };
+
+            speechSynthesis.speak(utterance);
+        }
+    }
 
 
     useEffect(() => {
         if (isPlaying) {
-            handlePlaying();
+            const newSentences = handleSegmentation();
+            handlePlayback(0, newSentences);
         } else {
             speechSynthesis.cancel()
         }
@@ -193,10 +211,9 @@ export default function App() {
         setSettingsStack(prev => prev.slice(0, -1));
     }
 
-
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas currentSentenceID={currentSentenceID} sentences={sentences} isPlaying={isPlaying} canvasRef={canvasRef}/>
+            <ReadingCanvas currentSentenceID={currentSentenceID} onClick = {(id: number)=> { handlePlayback(id)} } sentences={sentences} isPlaying={isPlaying} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
 

@@ -4,12 +4,13 @@ import type {SentenceItem} from "../Types.ts";
 
 type Prop = {
     isPlaying: boolean,
+    onClick: (id: number) => void,
     canvasRef: React.Ref<HTMLDivElement>,
     sentences: SentenceItem[],
     currentSentenceID: string,
 }
 
-export default function ReadingCanvas({isPlaying, canvasRef, sentences, currentSentenceID}: Prop) {
+export default function ReadingCanvas({isPlaying, canvasRef, sentences, currentSentenceID, onClick}: Prop) {
     return (
         <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
 
@@ -24,6 +25,7 @@ export default function ReadingCanvas({isPlaying, canvasRef, sentences, currentS
                                     key={sentence.key}
                                     text={sentence.text}
                                     id={sentence.id}
+                                    onClick={() => {onClick(parseInt(sentence.id))}}
                                     isHighlighted={currentSentenceID === sentence.id}
                                 />
                             )
