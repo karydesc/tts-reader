@@ -245,7 +245,7 @@ export default function App() {
 
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas currentSentenceID={currentSentenceID.toString()} onClick = {(id: number)=> { handlePlayback(id)} } sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
+            <ReadingCanvas currentSentenceID={currentSentenceID.toString()} onClick = {(id: number)=> { handlePlayback(id.toString())} } sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
 
