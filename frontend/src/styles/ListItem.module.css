@@ -16,16 +16,11 @@
 
 
 }
-.ListItem:hover {
+.ListItem:hover, .ListItem:active, .ListItem.highlighted {
     background: rgba(255, 255, 255, 0.28);
     transition: ease 0.1s;
 }
-.ListItem:active {
-    transform: scale(0.99);
-    transition: ease 0.1s;
 
-
-}
 .ListItem svg{
     width: 24px;
     height: 24px;

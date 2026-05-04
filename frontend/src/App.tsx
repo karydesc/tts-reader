@@ -31,9 +31,10 @@ export default function App() {
 
     const [sentences, setSentences] = useState<SentenceItem[]>([]);
     const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
+    const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice>(speechSynthesis.getVoices()[0]);
 
     const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [playButtonState, setPlayButtonState] = useState(false);
     const [theme, setTheme] = useState<ThemeState>({
         appBackground: "#a6d4ff",
         floatingBarBackground: "#0b102f",
@@ -80,11 +81,15 @@ export default function App() {
         return newSentences;
     }
 
-    function handlePlayback(startIndex: number, freshSentences?: SentenceItem[]) {
+    function handlePlayback(targetID: string, freshSentences?: SentenceItem[]) {
         speechSynthesis.cancel();
 
-        // If we passed fresh sentences, use them. Otherwise, use the state!
+        // if fresh sentences use them otherwise use the state
         const activeSentences = freshSentences || sentences;
+
+        const startIndex = activeSentences.findIndex(s => !s.isNewline && s.id === targetID);
+
+        if (startIndex === -1) return;
 
         const remainingSentences = activeSentences.slice(startIndex);
 
@@ -93,23 +98,32 @@ export default function App() {
 
             const utterance = new SpeechSynthesisUtterance(sentence.text);
 
+            utterance.voice = currentVoice;
+
             utterance.onboundary = () => {
                 setCurrentSentenceID(sentence.id!);
             };
 
             speechSynthesis.speak(utterance);
         }
-    }
 
+
+    }
+    useEffect(() => {
+        if (playButtonState && currentSentenceID !== "-1") {
+            handlePlayback(currentSentenceID);
+        }
+    }, [currentVoice]);
 
     useEffect(() => {
-        if (isPlaying) {
+        if (playButtonState) {
+            if (speechSynthesis.paused) {speechSynthesis.resume(); return}
             const newSentences = handleSegmentation();
-            handlePlayback(0, newSentences);
+            handlePlayback('0', newSentences);
         } else {
-            speechSynthesis.cancel()
+            speechSynthesis.pause()
         }
-    }, [isPlaying])
+    }, [playButtonState])
 
     const settingsMenu: MenuItem[] = [
         {
@@ -164,12 +178,20 @@ export default function App() {
         },
         {
             label: "Voices",
+            submenu:
+                speechSynthesis.getVoices().map((value): MenuItem => {
+                    return {
+                        label: value.name,
+                        action: () => {setCurrentVoice(value); closeMenu();},
+                        selected: currentVoice ? currentVoice.name == value.name : false
+                    }
+                })
+
         },
         {
             label: "Language"
         }
     ];
-
     const themeVars = {
         "--app-background": theme.appBackground,
         "--floating-bar-background": theme.floatingBarBackground,
@@ -178,7 +200,7 @@ export default function App() {
     } as CSSProperties;
 
     function togglePlay() {
-        setIsPlaying(prevState => !prevState);
+        setPlayButtonState(prevState => !prevState);
     }
 
     function openSettings() {
@@ -203,6 +225,16 @@ export default function App() {
         }
     }
 
+    function handleForwardBackward(value: string) {
+        let targetIdNumber = value === "f"
+            ? Number(currentSentenceID) + 1
+            : Number(currentSentenceID) - 1;
+
+        if (targetIdNumber < 0) targetIdNumber = 0;
+
+        handlePlayback(targetIdNumber.toString());
+    }
+
     function handleBack() {
         if (settingsStack.length === 1) {
             closeMenu();
@@ -213,18 +245,19 @@ export default function App() {
 
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas currentSentenceID={currentSentenceID} onClick = {(id: number)=> { handlePlayback(id)} } sentences={sentences} isPlaying={isPlaying} canvasRef={canvasRef}/>
+            <ReadingCanvas currentSentenceID={currentSentenceID.toString()} onClick = {(id: number)=> { handlePlayback(id)} } sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
 
                 bar={
                     <BarItems
+                        handleForwardBackward={handleForwardBackward}
                         onOpenSettingsMenu={() => openSettings()}
                         onOpenUserMenu={() => {
                             setPanelState("user")
                         }}
                         handleTogglePlay={togglePlay}
-                        isPlaying={isPlaying}
+                        isPlaying={playButtonState}
                     />
                 }
                 menu={

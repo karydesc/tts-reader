@@ -30,6 +30,7 @@ export default function Menu({items, canGoBack, onBack, onItemClick}: Props) {
                         text={item.label}
                         leftIcon={item.icon}
                         onClick={() => onItemClick(item)}
+                        selected={item.selected}
                         rightIcon={item.submenu ? "rightChevron" : undefined}
                     />
                 );

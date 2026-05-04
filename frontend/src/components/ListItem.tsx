@@ -6,10 +6,11 @@ type ListItemProps = {
     onClick?: () => void;
     leftIcon?: IconName;
     rightIcon?: IconName;
+    selected?: boolean;
 }
-export default function ListItem({text, onClick, leftIcon, rightIcon}: ListItemProps) {
+export default function ListItem({text, onClick, leftIcon, rightIcon, selected}: ListItemProps) {
     return (
-        <div className={`${styles.ListItem}`} onClick={onClick}>
+        <div className={`${styles.ListItem} ${selected ? styles.highlighted : ""}`} onClick={onClick}>
             {leftIcon ? ICON_MAP[leftIcon] : null}
             {text}
             <div className={styles.spacer}/>

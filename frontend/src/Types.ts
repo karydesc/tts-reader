@@ -3,6 +3,7 @@ import type {IconName} from "./assets/Icons.tsx";
 type BaseMenuItem = {
     label: string;
     icon?: IconName;
+    selected?: boolean;
 };
 
 export type ActionMenuItem = BaseMenuItem & {
