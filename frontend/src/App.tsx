@@ -1,4 +1,4 @@
-import {useState, type CSSProperties, useEffect} from 'react';
+import {useState, type CSSProperties, useEffect, useRef} from 'react';
 import "./styles/App.css"
 import type {ActionMenuItem, MenuItem, PanelState, SentenceItem} from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
@@ -8,9 +8,7 @@ import BarItems from "./components/BarItems.tsx";
 import UserMenuItems from "./components/UserMenuItems.tsx";
 import * as React from "react";
 
-
 const canvasRef = React.createRef<HTMLDivElement>();
-let childCount = 0;
 
 type ThemeState = {
     appBackground: string;
@@ -26,13 +24,11 @@ const defaultTheme: ThemeState = {
     canvasColor2: "#357cc7",
 }
 
-
 export default function App() {
-
     const [sentences, setSentences] = useState<SentenceItem[]>([]);
     const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
-    const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice>(speechSynthesis.getVoices()[0]);
-
+    const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice | null>(null);
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
     const [playButtonState, setPlayButtonState] = useState(false);
     const [theme, setTheme] = useState<ThemeState>({
@@ -43,6 +39,29 @@ export default function App() {
     });
     const [panelState, setPanelState] = useState<PanelState>("closed")
 
+    const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+    const sentenceIdRef = useRef<string>("-1");
+    const playStateRef = useRef<boolean>(false);
+
+    useEffect(() => { sentenceIdRef.current = currentSentenceID; }, [currentSentenceID]);
+    useEffect(() => { playStateRef.current = playButtonState; }, [playButtonState]);
+
+    useEffect(() => {
+        const updateVoices = () => {
+            const loadedVoices = speechSynthesis.getVoices();
+            setVoices(loadedVoices);
+            if (loadedVoices.length > 0) {
+                setCurrentVoice(prev => {
+                    const newVoice = prev ? prev : loadedVoices[0];
+                    voiceRef.current = newVoice;
+                    return newVoice;
+                });
+            }
+        };
+        updateVoices();
+        speechSynthesis.addEventListener("voiceschanged", updateVoices);
+        return () => speechSynthesis.removeEventListener("voiceschanged", updateVoices);
+    }, []);
 
     function updateThemeColor(key: keyof ThemeState) {
         return (value: string) => {
@@ -51,7 +70,6 @@ export default function App() {
                 [key]: value,
             }));
         };
-
     }
 
     function resetThemeColor() {
@@ -59,21 +77,25 @@ export default function App() {
     }
 
     function handleSegmentation(): SentenceItem[] {
-        childCount = 0;
-        const text = canvasRef.current!.textContent;
+        if (!canvasRef.current) return [];
+
+        let sentenceIdCounter = 0;
+        const text = canvasRef.current.textContent || "";
         const segmenter = new Intl.Segmenter("en", {granularity: "sentence"})
-        const segments = Array.from(segmenter.segment(text!));
+        const segments = Array.from(segmenter.segment(text));
+
         const newSentences = segments.map((seg, index): SentenceItem => {
             if (seg.segment === "\n") {
                 return {
                     id: "", text: "",
                     isNewline: true,
-                    key: `${index}` };
+                    key: `${index}`
+                };
             }
             return {
                 isNewline: false,
                 text: seg.segment,
-                id: (childCount++).toString(),
+                id: (sentenceIdCounter++).toString(),
                 key: `${index}`,
             }
         });
@@ -83,82 +105,44 @@ export default function App() {
 
     function handlePlayback(targetID: string, freshSentences?: SentenceItem[]) {
         speechSynthesis.cancel();
-
-        // if fresh sentences use them otherwise use the state
         const activeSentences = freshSentences || sentences;
-
         const startIndex = activeSentences.findIndex(s => !s.isNewline && s.id === targetID);
-
         if (startIndex === -1) return;
 
-        const remainingSentences = activeSentences.slice(startIndex);
+        const sentenceToPlay = activeSentences[startIndex];
+        const utterance = new SpeechSynthesisUtterance(sentenceToPlay.text);
 
-        for (const sentence of remainingSentences) {
-            if (sentence.isNewline) continue;
-
-            const utterance = new SpeechSynthesisUtterance(sentence.text);
-
-            utterance.voice = currentVoice;
-
-            utterance.onboundary = () => {
-                setCurrentSentenceID(sentence.id!);
-            };
-
-            speechSynthesis.speak(utterance);
+        if (voiceRef.current) {
+            utterance.voice = voiceRef.current;
         }
 
+        utterance.onboundary = () => {
+            setCurrentSentenceID(sentenceToPlay.id!);
+        };
 
+        utterance.onend = () => {
+            const nextValidSentence = activeSentences.slice(startIndex + 1).find(s => !s.isNewline);
+            if (nextValidSentence) {
+                handlePlayback(nextValidSentence.id, activeSentences);
+            } else {
+                setPlayButtonState(false);
+                setCurrentSentenceID("-1");
+            }
+        };
+
+        speechSynthesis.speak(utterance);
     }
-    useEffect(() => {
-        if (playButtonState && currentSentenceID !== "-1") {
-            handlePlayback(currentSentenceID);
-        }
-    }, [currentVoice]);
-
-    useEffect(() => {
-        if (playButtonState) {
-            if (speechSynthesis.paused) {speechSynthesis.resume(); return}
-            const newSentences = handleSegmentation();
-            handlePlayback('0', newSentences);
-        } else {
-            speechSynthesis.pause()
-        }
-    }, [playButtonState])
 
     const settingsMenu: MenuItem[] = [
         {
             label: "App Theme",
             icon: "colorpicker",
             submenu: [
-                {
-                    kind: "colorPicker",
-                    label: "App Background",
-                    value: theme.appBackground,
-                    onChange: updateThemeColor("appBackground"),
-                },
-                {
-                    kind: "colorPicker",
-                    label: "Control Bar",
-                    value: theme.floatingBarBackground,
-                    onChange: updateThemeColor("floatingBarBackground"),
-                },
-                {
-                    kind: "colorPicker",
-                    label: "Canvas Top",
-                    value: theme.canvasColor1,
-                    onChange: updateThemeColor("canvasColor1"),
-                },
-                {
-                    kind: "colorPicker",
-                    label: "Canvas Bottom",
-                    value: theme.canvasColor2,
-                    onChange: updateThemeColor("canvasColor2"),
-                },
-                {
-                    kind: "action",
-                    label: "Reset Theme",
-                    action: resetThemeColor
-                },
+                { kind: "colorPicker", label: "App Background", value: theme.appBackground, onChange: updateThemeColor("appBackground") },
+                { kind: "colorPicker", label: "Control Bar", value: theme.floatingBarBackground, onChange: updateThemeColor("floatingBarBackground") },
+                { kind: "colorPicker", label: "Canvas Top", value: theme.canvasColor1, onChange: updateThemeColor("canvasColor1") },
+                { kind: "colorPicker", label: "Canvas Bottom", value: theme.canvasColor2, onChange: updateThemeColor("canvasColor2") },
+                { kind: "action", label: "Reset Theme", action: resetThemeColor },
             ],
         },
         {
@@ -179,10 +163,25 @@ export default function App() {
         {
             label: "Voices",
             submenu:
-                speechSynthesis.getVoices().map((value): MenuItem => {
+                voices.map((value): MenuItem => {
                     return {
                         label: value.name,
-                        action: () => {setCurrentVoice(value); closeMenu();},
+                        action: () => {
+                            // --- FIX 2: Immediate UI Feedback ---
+                            setCurrentVoice(value);
+                            voiceRef.current = value; // Update Ref instantly
+                            closeMenu();
+
+                            // If we are actively reading (paused or playing), restart the sentence to apply voice instantly
+                            if (sentenceIdRef.current !== "-1") {
+                                handlePlayback(sentenceIdRef.current);
+
+                                // If they were paused, make sure the new voice utterance is also paused
+                                if (!playStateRef.current) {
+                                    setTimeout(() => speechSynthesis.pause(), 50);
+                                }
+                            }
+                        },
                         selected: currentVoice ? currentVoice.name == value.name : false
                     }
                 })
@@ -192,6 +191,7 @@ export default function App() {
             label: "Language"
         }
     ];
+
     const themeVars = {
         "--app-background": theme.appBackground,
         "--floating-bar-background": theme.floatingBarBackground,
@@ -200,7 +200,18 @@ export default function App() {
     } as CSSProperties;
 
     function togglePlay() {
-        setPlayButtonState(prevState => !prevState);
+        if (playButtonState) {
+            speechSynthesis.pause();
+            setPlayButtonState(false);
+        } else {
+            if (speechSynthesis.paused) {
+                speechSynthesis.resume();
+            } else {
+                const newSentences = handleSegmentation();
+                handlePlayback('0', newSentences);
+            }
+            setPlayButtonState(true);
+        }
     }
 
     function openSettings() {
@@ -212,7 +223,7 @@ export default function App() {
         setPanelState("closed");
         setTimeout(() => {
             setSettingsStack([]);
-        }, 500); // need to wait for animation to finish, then reset the stack
+        }, 500);
     }
 
     function handleMenuItemClick(item: ActionMenuItem) {
@@ -248,7 +259,6 @@ export default function App() {
             <ReadingCanvas currentSentenceID={currentSentenceID.toString()} onClick = {(id: number)=> { handlePlayback(id.toString())} } sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
-
                 bar={
                     <BarItems
                         handleForwardBackward={handleForwardBackward}
