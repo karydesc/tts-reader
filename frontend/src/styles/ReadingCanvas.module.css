@@ -1,6 +1,6 @@
 .canvas{
     color: contrast-color(var(--canvasColor1));
-    margin: 3vh 0;
+    margin: 25vh 0;
     padding: 15px;
     border-radius: 18px;
     width: 90vw;
@@ -13,3 +13,49 @@
 
 }
 
+
+.canvas.shown{
+    margin: 20vh 0;
+    transition: margin 0.3s ease;
+}
+.canvas.hidden{
+    margin: 2vh 0;
+    transition: margin 0.3s ease;
+
+}
+.wordBar{
+    z-index: 9999;
+    display: flex;
+    position: fixed;
+    margin: 2vh;
+    font-weight: bold;
+    font-size: xxx-large;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--floating-bar-background, rgb(11 16 47 / 0.88));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: contrast-color(var(--floating-bar-background));
+
+    border-radius: 18px;
+    width: 90vw;
+    max-width: 800px;
+    min-height: 10vh;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.38);
+}
+
+
+.wordBar.shown{
+    top: 2%;
+    transform: scale(1.0);
+    opacity: 1;
+    transition: all 0.5s cubic-bezier(0.32, 0.08, 0.24, 1);
+}
+.wordBar.hidden{
+    top: -30%;
+    transform: scale(1.5);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.32, 0.08, 0.24, 1);
+}

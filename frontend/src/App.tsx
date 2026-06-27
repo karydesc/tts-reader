@@ -31,6 +31,10 @@ export default function App() {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
     const [playButtonState, setPlayButtonState] = useState(false);
+    const [showWordBar, setShowWordBar] = useState(false);
+    const [currentWord, setCurrentWord] = useState<string>("");
+    const [readingSpeed, setReadingSpeed] = useState<0.5 | 0.75 | 1 | 1.25 | 1.5 | 2>(1);
+
     const [theme, setTheme] = useState<ThemeState>({
         appBackground: "#a6d4ff",
         floatingBarBackground: "#0b102f",
@@ -80,7 +84,7 @@ export default function App() {
         if (!canvasRef.current) return [];
 
         let sentenceIdCounter = 0;
-        const text = canvasRef.current.textContent || "";
+        const text = canvasRef.current.textContent ?? "";
         const segmenter = new Intl.Segmenter("en", {granularity: "sentence"})
         const segments = Array.from(segmenter.segment(text));
 
@@ -105,7 +109,7 @@ export default function App() {
 
     function handlePlayback(targetID: string, freshSentences?: SentenceItem[]) {
         speechSynthesis.cancel();
-        const activeSentences = freshSentences || sentences;
+        const activeSentences = freshSentences ?? sentences;
         const startIndex = activeSentences.findIndex(s => !s.isNewline && s.id === targetID);
         if (startIndex === -1) return;
 
@@ -116,8 +120,11 @@ export default function App() {
             utterance.voice = voiceRef.current;
         }
 
-        utterance.onboundary = () => {
+        utterance.rate = readingSpeed;
+        utterance.onboundary = (x) => {
             setCurrentSentenceID(sentenceToPlay.id!);
+            setCurrentWord(sentenceToPlay.text.slice(x.charIndex, x.charIndex+x.charLength) ?? "Word Bar Unsupported on Platform");
+
         };
 
         utterance.onend = () => {
@@ -139,7 +146,7 @@ export default function App() {
             icon: "colorpicker",
             submenu: [
                 { kind: "colorPicker", label: "App Background", value: theme.appBackground, onChange: updateThemeColor("appBackground") },
-                { kind: "colorPicker", label: "Control Bar", value: theme.floatingBarBackground, onChange: updateThemeColor("floatingBarBackground") },
+                { kind: "colorPicker", label: "Control/Word Bar", value: theme.floatingBarBackground, onChange: updateThemeColor("floatingBarBackground") },
                 { kind: "colorPicker", label: "Canvas Top", value: theme.canvasColor1, onChange: updateThemeColor("canvasColor1") },
                 { kind: "colorPicker", label: "Canvas Bottom", value: theme.canvasColor2, onChange: updateThemeColor("canvasColor2") },
                 { kind: "action", label: "Reset Theme", action: resetThemeColor },
@@ -154,11 +161,42 @@ export default function App() {
             label: "Reading Speed",
             icon: "speed",
             submenu: [
-                {label: "Slow", action: () => console.log("slow")},
-                {label: "Normal", action: () => console.log("normal")},
-                {label: "Fast", action: () => console.log("fast")},
+                {label: "0.5x", action: () => {
+                        setReadingSpeed(0.5);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current); //restart from current sentence
+                    }, selected: readingSpeed == 0.5},
+                {label: "0.75x", action: () => {
+                        setReadingSpeed(0.75);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current);
+
+                    }, selected: readingSpeed == 0.75},
+                {label: "1x", action: () => {
+                        setReadingSpeed(1);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current);
+
+                    }, selected: readingSpeed == 1},
+                {label: "1.25x", action: () => {
+                    setReadingSpeed(1.25);
+                    closeMenu();
+                    handlePlayback(sentenceIdRef.current);
+
+                    }, selected: readingSpeed == 1.25},
+                {label: "1.5x", action: () => {
+                setReadingSpeed(1.5);
+                closeMenu();
+                handlePlayback(sentenceIdRef.current);
+                }, selected: readingSpeed == 1.5
+                },
+                {label: "2x", action: () => {
+                    setReadingSpeed(2);
+                    closeMenu();
+                    handlePlayback(sentenceIdRef.current);
+                    }, selected: readingSpeed == 2}
+
             ],
-            action: () => console.log("Action"),
         },
         {
             label: "Voices",
@@ -167,16 +205,14 @@ export default function App() {
                     return {
                         label: value.name,
                         action: () => {
-                            // --- FIX 2: Immediate UI Feedback ---
                             setCurrentVoice(value);
-                            voiceRef.current = value; // Update Ref instantly
+                            voiceRef.current = value;
                             closeMenu();
 
-                            // If we are actively reading (paused or playing), restart the sentence to apply voice instantly
-                            if (sentenceIdRef.current !== "-1") {
+                            if (sentenceIdRef.current !== "-1") { //apply new voice
                                 handlePlayback(sentenceIdRef.current);
 
-                                // If they were paused, make sure the new voice utterance is also paused
+                                // if  paused  make sure the new voice utterance is also paused
                                 if (!playStateRef.current) {
                                     setTimeout(() => speechSynthesis.pause(), 50);
                                 }
@@ -189,6 +225,10 @@ export default function App() {
         },
         {
             label: "Language"
+        },
+        {label: showWordBar ? "Hide WordBar" : "Show WordBar",
+            action: () => {setShowWordBar(!showWordBar); closeMenu(); },
+
         }
     ];
 
@@ -256,7 +296,7 @@ export default function App() {
 
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas currentSentenceID={currentSentenceID.toString()} onClick = {(id: number)=> { handlePlayback(id.toString())} } sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
+            <ReadingCanvas  currentWord={currentWord} barShown={showWordBar} currentSentenceID={currentSentenceID.toString()} onClick = {(id: number)=> { handlePlayback(id.toString())} } sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
                 bar={
