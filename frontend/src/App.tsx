@@ -8,8 +8,8 @@ import FloatingControlBar from "./components/FloatingControlBar.tsx";
 import BarItems from "./components/BarItems.tsx";
 import UserMenuItems from "./components/UserMenuItems.tsx";
 import { SpeechManager, SpeechEngine, ReadingSpeed } from "./services/SpeechManager";
-const canvasRef = React.createRef<HTMLDivElement>()
 
+const canvasRef = React.createRef<HTMLDivElement>()
 
 type ThemeState = {
     appBackground: string;
@@ -35,6 +35,7 @@ export default function App() {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
     const [playButtonState, setPlayButtonState] = useState(false);
+    const [textChanged, setTextChanged] = useState<boolean>(false);
     const [showWordBar, setShowWordBar] = useState(false);
     const [currentWord, setCurrentWord] = useState<string>("");
     const [readingSpeed, setReadingSpeed] = useState<ReadingSpeed>(ReadingSpeed.NORMAL);
@@ -55,6 +56,10 @@ export default function App() {
     useEffect(() => { sentenceIdRef.current = currentSentenceID; }, [currentSentenceID]);
     useEffect(() => { playStateRef.current = playButtonState; }, [playButtonState]);
     useEffect(() => { readSpeedRef.current = readingSpeed; }, [readingSpeed]);
+
+    canvasRef.current?.addEventListener("input", (event) => {
+        setTextChanged(true);
+    })
 
     useEffect(() => {
         const updateVoices = () => {
@@ -289,9 +294,11 @@ export default function App() {
             tts.pause();
             setPlayButtonState(false);
         } else {
-            if (tts.isPaused()) {
+            if (tts.isPaused() && !textChanged) {
                 tts.resume();
             } else {
+                setTextChanged(false);
+                tts.cancel();
                 const newSentences = handleSegmentation();
                 handlePlayback('0', newSentences);
             }

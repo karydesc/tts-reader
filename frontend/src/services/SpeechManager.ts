@@ -110,16 +110,15 @@ export class SpeechManager {
     }
 
     public getVoices(): any {
-        switch (this.currentEngine) {
+        switch (this.currentEngine){
             case SpeechEngine.NATIVE:
                 return speechSynthesis.getVoices();
             case SpeechEngine.PIPER:
                 return tts.voices();
-        }
+            }
     }
 
     public async test(text: string): Promise<void> {
-
         const wav = await tts.predict({
             text: text,
             voiceId: 'en_US-hfc_female-medium',
