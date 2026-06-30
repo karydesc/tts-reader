@@ -1,18 +1,18 @@
-import * as tts from "@mintplex-labs/piper-tts-web"
+export const SpeechEngine = {
+    NATIVE: 0,
+    PIPER: 1
+} as const;
+export type SpeechEngine = typeof SpeechEngine[keyof typeof SpeechEngine];
 
-export enum SpeechEngine {
-    NATIVE,
-    PIPER
-}
-
-export enum ReadingSpeed {
-    SLOWEST = 0.5,
-    SLOW = 0.75,
-    NORMAL = 1,
-    FAST = 1.25,
-    FASTER = 1.5,
-    FASTEST = 2
-}
+export const ReadingSpeed = {
+    SLOWEST: 0.5,
+    SLOW: 0.75,
+    NORMAL: 1,
+    FAST: 1.25,
+    FASTER: 1.5,
+    FASTEST: 2
+} as const;
+export type ReadingSpeed = typeof ReadingSpeed[keyof typeof ReadingSpeed];
 
 export class SpeechManager {
     private currentEngine: SpeechEngine;
@@ -110,23 +110,12 @@ export class SpeechManager {
     }
 
     public getVoices(): any {
-        switch (this.currentEngine){
+        switch (this.currentEngine) {
             case SpeechEngine.NATIVE:
                 return speechSynthesis.getVoices();
             case SpeechEngine.PIPER:
-                return tts.voices();
-            }
-    }
-
-    public async test(text: string): Promise<void> {
-        const wav = await tts.predict({
-            text: text,
-            voiceId: 'en_US-hfc_female-medium',
-        });
-
-        const audio = new Audio();
-        audio.src = URL.createObjectURL(wav);
-        await audio.play();
+                break;
+        }
     }
 
 }

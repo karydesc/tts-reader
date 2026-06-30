@@ -57,7 +57,7 @@ export default function App() {
     useEffect(() => { playStateRef.current = playButtonState; }, [playButtonState]);
     useEffect(() => { readSpeedRef.current = readingSpeed; }, [readingSpeed]);
 
-    canvasRef.current?.addEventListener("input", (event) => {
+    canvasRef.current?.addEventListener("input", () => {
         setTextChanged(true);
     })
 
@@ -267,8 +267,8 @@ export default function App() {
                     selected: selectedEngine === SpeechEngine.NATIVE
                 },
                 {
-                    label: "Piper TTS",
-                    action: () => { handleEngineChange(SpeechEngine.PIPER); closeMenu(); tts.test("this is a test") },
+                    label: "Piper TTS (Cloud)",
+                    action: () => { handleEngineChange(SpeechEngine.PIPER); closeMenu();},
                     selected: selectedEngine === SpeechEngine.PIPER
                 }
             ]

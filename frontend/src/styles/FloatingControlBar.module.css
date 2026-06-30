@@ -1,19 +1,39 @@
-.pill{
+.pill {
     display: flex;
     position: fixed;
     bottom: 3%;
-    padding: 8px 10px;
+    background: var(--floating-bar-background, rgb(11 16 47 / 0.88));
+    color: contrast-color(var(--floating-bar-background));
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    box-shadow: 0 18px 40px rgba(20, 30, 80, 0.18);
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.3s ease;
+}
+
+.isClosed {
     width: 40vw;
     min-width: 280px;
     height: 7vh;
-    background: var(--floating-bar-background, rgb(11 16 47 / 0.88));
-    color: contrast-color(var(--floating-bar-background));
-    transition: background 0.3s ease, color 0.3s ease;
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.38);
     border-radius: 60px;
-    box-shadow: 0 18px 40px rgba(20, 30, 80, 0.18);
+    padding: 8px 10px;
+}
 
+.isSettings {
+    width: 20vw;
+    height: 50vh;
+    border-radius: 18px;
+    padding: 8px 10px;
+}
+
+.isUser {
+    width: 25vw;
+    height: 50vh;
+    padding: 0;
+    border-radius: 18px;
 }
 
 .layer {
@@ -35,56 +55,107 @@
     flex-direction: column;
     justify-content: flex-start;
     overflow-y: auto;
+    width: 100%;
+    height: 100%;
 }
 
 .bar {
     flex-direction: row;
 }
-.userMenu{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 1rem;
-}
+
 .userMenuContainer {
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
     justify-content: flex-start;
-    padding: 1rem;
     overflow-x: hidden;
     overflow-y: auto;
     width: 100%;
     height: 100%;
+    gap: 1rem;
 }
-.userMenuHeader{
+
+.userMenuHeader {
     display: flex;
+    align-items: center;
     justify-content: flex-start;
-    border-radius: 60px;
-    border : 2px solid var(--appBackground);
+    gap: 1.25rem;
+    padding: 0.5rem;
+    box-sizing: border-box;
     width: 100%;
-    margin: 0;
+    margin-top: 0.5rem;
 }
-.userStatisticsContainer {
+
+.avatar {
+    background-image: url('https://i.sstatic.net/Dj7eP.jpg');
+    width: 3.5rem;
+    height: 3.5rem;
+    background-size: cover;
+    background-position: top center;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+}
+
+.profileDetails h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+.statsWrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.userMenuListItem {
     display: flex;
     justify-content: space-between;
-    border-radius: 60px;
-    border : 2px solid var(--appBackground);
-    margin:0;
-    /*background: var(--floating-bar-background, rgb(11 16 47 / 0.88));*/
-}
-.userButtonsContainer{
-    display: flex;
-    flex-direction: column; /* Stack the list items vertically */
     align-items: center;
-    gap:0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
+.statLabel {
+    color: rgba(255, 255, 255, 0.7);
+}
 
-.hidden{
+.statValue {
+    font-weight: bold;
+}
+
+.userButtonsContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.hidden {
     opacity: 0;
     pointer-events: none;
 }
-.visible{
+
+.visible {
     opacity: 1;
     pointer-events: auto;
     transition-delay: 0.2s;

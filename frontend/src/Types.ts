@@ -29,10 +29,5 @@ export type UserView =
 
 export type PanelState = "closed" | "settings" | "user"
 
-export type AuthState =
-| { status: "anonymous" }
-| { status: "loading" }
-| { status: "authenticated"; user: { id: string; email: string } }
-
 export type SentenceItem =
     {isNewline: boolean; text: string; id: string; key: string}
