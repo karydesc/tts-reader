@@ -1,14 +1,15 @@
-import {useState, type CSSProperties, useEffect, useRef} from 'react';
+import * as React from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import "./styles/App.css"
-import type {ActionMenuItem, MenuItem, PanelState, SentenceItem} from "./Types.ts";
+import type { ActionMenuItem, MenuItem, PanelState, SentenceItem } from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
 import Menu from "./components/Menu.tsx";
 import FloatingControlBar from "./components/FloatingControlBar.tsx";
 import BarItems from "./components/BarItems.tsx";
 import UserMenuItems from "./components/UserMenuItems.tsx";
-import * as React from "react";
+import { SpeechManager, SpeechEngine, ReadingSpeed } from "./services/SpeechManager";
+const canvasRef = React.createRef<HTMLDivElement>()
 
-const canvasRef = React.createRef<HTMLDivElement>();
 
 type ThemeState = {
     appBackground: string;
@@ -24,7 +25,10 @@ const defaultTheme: ThemeState = {
     canvasColor2: "#357cc7",
 }
 
+const tts = new SpeechManager(SpeechEngine.NATIVE);
+
 export default function App() {
+    const [selectedEngine, setSelectedEngine] = useState<SpeechEngine>(SpeechEngine.NATIVE);
     const [sentences, setSentences] = useState<SentenceItem[]>([]);
     const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
     const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice | null>(null);
@@ -33,7 +37,7 @@ export default function App() {
     const [playButtonState, setPlayButtonState] = useState(false);
     const [showWordBar, setShowWordBar] = useState(false);
     const [currentWord, setCurrentWord] = useState<string>("");
-    const [readingSpeed, setReadingSpeed] = useState<0.5 | 0.75 | 1 | 1.25 | 1.5 | 2>(1);
+    const [readingSpeed, setReadingSpeed] = useState<ReadingSpeed>(ReadingSpeed.NORMAL);
 
     const [theme, setTheme] = useState<ThemeState>({
         appBackground: "#a6d4ff",
@@ -46,9 +50,11 @@ export default function App() {
     const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
     const sentenceIdRef = useRef<string>("-1");
     const playStateRef = useRef<boolean>(false);
+    const readSpeedRef = useRef<ReadingSpeed>(ReadingSpeed.NORMAL);
 
     useEffect(() => { sentenceIdRef.current = currentSentenceID; }, [currentSentenceID]);
     useEffect(() => { playStateRef.current = playButtonState; }, [playButtonState]);
+    useEffect(() => { readSpeedRef.current = readingSpeed; }, [readingSpeed]);
 
     useEffect(() => {
         const updateVoices = () => {
@@ -80,12 +86,17 @@ export default function App() {
         setTheme(defaultTheme)
     }
 
+    function handleEngineChange(engine: SpeechEngine) {
+        tts.setEngine(engine);
+        setSelectedEngine(engine);
+    }
+
     function handleSegmentation(): SentenceItem[] {
         if (!canvasRef.current) return [];
 
         let sentenceIdCounter = 0;
         const text = canvasRef.current.textContent ?? "";
-        const segmenter = new Intl.Segmenter("en", {granularity: "sentence"})
+        const segmenter = new Intl.Segmenter("en", { granularity: "sentence" })
         const segments = Array.from(segmenter.segment(text));
 
         const newSentences = segments.map((seg, index): SentenceItem => {
@@ -108,36 +119,31 @@ export default function App() {
     }
 
     function handlePlayback(targetID: string, freshSentences?: SentenceItem[]) {
-        speechSynthesis.cancel();
+        tts.cancel();
         const activeSentences = freshSentences ?? sentences;
         const startIndex = activeSentences.findIndex(s => !s.isNewline && s.id === targetID);
         if (startIndex === -1) return;
 
         const sentenceToPlay = activeSentences[startIndex];
-        const utterance = new SpeechSynthesisUtterance(sentenceToPlay.text);
 
-        if (voiceRef.current) {
-            utterance.voice = voiceRef.current;
-        }
-
-        utterance.rate = readingSpeed;
-        utterance.onboundary = (x) => {
-            setCurrentSentenceID(sentenceToPlay.id!);
-            setCurrentWord(sentenceToPlay.text.slice(x.charIndex, x.charIndex+x.charLength) ?? "Word Bar Unsupported on Platform");
-
-        };
-
-        utterance.onend = () => {
-            const nextValidSentence = activeSentences.slice(startIndex + 1).find(s => !s.isNewline);
-            if (nextValidSentence) {
-                handlePlayback(nextValidSentence.id, activeSentences);
-            } else {
-                setPlayButtonState(false);
-                setCurrentSentenceID("-1");
+        tts.speak(
+            sentenceToPlay.text,
+            voiceRef.current,
+            readSpeedRef.current,
+            (charIndex, charLength) => {
+                setCurrentSentenceID(sentenceToPlay.id!);
+                setCurrentWord(sentenceToPlay.text.slice(charIndex, charIndex + charLength) ?? "");
+            },
+            () => {
+                const nextValidSentence = activeSentences.slice(startIndex + 1).find(s => !s.isNewline);
+                if (nextValidSentence) {
+                    handlePlayback(nextValidSentence.id, activeSentences);
+                } else {
+                    setPlayButtonState(false);
+                    setCurrentSentenceID("-1");
+                }
             }
-        };
-
-        speechSynthesis.speak(utterance);
+        );
     }
 
     const settingsMenu: MenuItem[] = [
@@ -145,10 +151,30 @@ export default function App() {
             label: "App Theme",
             icon: "colorpicker",
             submenu: [
-                { kind: "colorPicker", label: "App Background", value: theme.appBackground, onChange: updateThemeColor("appBackground") },
-                { kind: "colorPicker", label: "Control/Word Bar", value: theme.floatingBarBackground, onChange: updateThemeColor("floatingBarBackground") },
-                { kind: "colorPicker", label: "Canvas Top", value: theme.canvasColor1, onChange: updateThemeColor("canvasColor1") },
-                { kind: "colorPicker", label: "Canvas Bottom", value: theme.canvasColor2, onChange: updateThemeColor("canvasColor2") },
+                {
+                    kind: "colorPicker",
+                    label: "App Background",
+                    value: theme.appBackground,
+                    onChange: updateThemeColor("appBackground")
+                },
+                {
+                    kind: "colorPicker",
+                    label: "Control/Word Bar",
+                    value: theme.floatingBarBackground,
+                    onChange: updateThemeColor("floatingBarBackground")
+                },
+                {
+                    kind: "colorPicker",
+                    label: "Canvas Top",
+                    value: theme.canvasColor1,
+                    onChange: updateThemeColor("canvasColor1")
+                },
+                {
+                    kind: "colorPicker",
+                    label: "Canvas Bottom",
+                    value: theme.canvasColor2,
+                    onChange: updateThemeColor("canvasColor2")
+                },
                 { kind: "action", label: "Reset Theme", action: resetThemeColor },
             ],
         },
@@ -161,74 +187,93 @@ export default function App() {
             label: "Reading Speed",
             icon: "speed",
             submenu: [
-                {label: "0.5x", action: () => {
-                        setReadingSpeed(0.5);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current); //restart from current sentence
-                    }, selected: readingSpeed == 0.5},
-                {label: "0.75x", action: () => {
-                        setReadingSpeed(0.75);
+                {
+                    label: "0.5x", action: () => {
+                        setReadingSpeed(ReadingSpeed.SLOWEST);
                         closeMenu();
                         handlePlayback(sentenceIdRef.current);
-
-                    }, selected: readingSpeed == 0.75},
-                {label: "1x", action: () => {
-                        setReadingSpeed(1);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current);
-
-                    }, selected: readingSpeed == 1},
-                {label: "1.25x", action: () => {
-                    setReadingSpeed(1.25);
-                    closeMenu();
-                    handlePlayback(sentenceIdRef.current);
-
-                    }, selected: readingSpeed == 1.25},
-                {label: "1.5x", action: () => {
-                setReadingSpeed(1.5);
-                closeMenu();
-                handlePlayback(sentenceIdRef.current);
-                }, selected: readingSpeed == 1.5
+                    }, selected: readingSpeed == ReadingSpeed.SLOWEST
                 },
-                {label: "2x", action: () => {
-                    setReadingSpeed(2);
-                    closeMenu();
-                    handlePlayback(sentenceIdRef.current);
-                    }, selected: readingSpeed == 2}
-
+                {
+                    label: "0.75x", action: () => {
+                        setReadingSpeed(ReadingSpeed.SLOW);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current);
+                    }, selected: readingSpeed == ReadingSpeed.SLOW
+                },
+                {
+                    label: "1x", action: () => {
+                        setReadingSpeed(ReadingSpeed.NORMAL);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current);
+                    }, selected: readingSpeed == ReadingSpeed.NORMAL
+                },
+                {
+                    label: "1.25x", action: () => {
+                        setReadingSpeed(ReadingSpeed.FAST);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current);
+                    }, selected: readingSpeed == ReadingSpeed.FAST
+                },
+                {
+                    label: "1.5x", action: () => {
+                        setReadingSpeed(ReadingSpeed.FASTER);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current);
+                    }, selected: readingSpeed == ReadingSpeed.FASTER
+                },
+                {
+                    label: "2x", action: () => {
+                        setReadingSpeed(ReadingSpeed.FASTEST);
+                        closeMenu();
+                        handlePlayback(sentenceIdRef.current);
+                    }, selected: readingSpeed == ReadingSpeed.FASTEST
+                }
             ],
         },
         {
             label: "Voices",
-            submenu:
-                voices.map((value): MenuItem => {
-                    return {
-                        label: value.name,
-                        action: () => {
-                            setCurrentVoice(value);
-                            voiceRef.current = value;
-                            closeMenu();
+            submenu: voices.map((value): MenuItem => {
+                return {
+                    label: value.name,
+                    action: () => {
+                        setCurrentVoice(value);
+                        voiceRef.current = value;
+                        closeMenu();
 
-                            if (sentenceIdRef.current !== "-1") { //apply new voice
-                                handlePlayback(sentenceIdRef.current);
+                        if (sentenceIdRef.current !== "-1") {
+                            handlePlayback(sentenceIdRef.current);
 
-                                // if  paused  make sure the new voice utterance is also paused
-                                if (!playStateRef.current) {
-                                    setTimeout(() => speechSynthesis.pause(), 50);
-                                }
+                            if (!playStateRef.current) {
+                                setTimeout(() => tts.pause(), 50);
                             }
-                        },
-                        selected: currentVoice ? currentVoice.name == value.name : false
-                    }
-                })
-
+                        }
+                    },
+                    selected: currentVoice ? currentVoice.name == value.name : false
+                }
+            })
         },
         {
-            label: "Language"
+            label: "Speech Engine",
+            submenu: [
+                {
+                    label: "Native Browser TTS",
+                    action: () => { handleEngineChange(SpeechEngine.NATIVE); closeMenu(); },
+                    selected: selectedEngine === SpeechEngine.NATIVE
+                },
+                {
+                    label: "Piper TTS",
+                    action: () => { handleEngineChange(SpeechEngine.PIPER); closeMenu(); tts.test("this is a test") },
+                    selected: selectedEngine === SpeechEngine.PIPER
+                }
+            ]
         },
-        {label: showWordBar ? "Hide WordBar" : "Show WordBar",
-            action: () => {setShowWordBar(!showWordBar); closeMenu(); },
-
+        {
+            label: showWordBar ? "Hide WordBar" : "Show WordBar",
+            action: () => {
+                setShowWordBar(!showWordBar);
+                closeMenu();
+            },
         }
     ];
 
@@ -241,11 +286,11 @@ export default function App() {
 
     function togglePlay() {
         if (playButtonState) {
-            speechSynthesis.pause();
+            tts.pause();
             setPlayButtonState(false);
         } else {
-            if (speechSynthesis.paused) {
-                speechSynthesis.resume();
+            if (tts.isPaused()) {
+                tts.resume();
             } else {
                 const newSentences = handleSegmentation();
                 handlePlayback('0', newSentences);
@@ -296,7 +341,10 @@ export default function App() {
 
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas  currentWord={currentWord} barShown={showWordBar} currentSentenceID={currentSentenceID.toString()} onClick = {(id: number)=> { handlePlayback(id.toString())} } sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
+            <ReadingCanvas currentWord={currentWord} barShown={showWordBar}
+                           currentSentenceID={currentSentenceID.toString()} onClick={(id: number) => {
+                handlePlayback(id.toString())
+            }} sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
             <FloatingControlBar
                 panelState={panelState}
                 bar={

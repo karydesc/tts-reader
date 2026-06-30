@@ -33,7 +33,7 @@
     align-items: center;
     justify-content: center;
 
-    background: var(--floating-bar-background, rgb(11 16 47 / 0.88));
+    background: var(--floating-bar-background);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     color: contrast-color(var(--floating-bar-background));
