@@ -18,13 +18,14 @@
     width: 40vw;
     min-width: 280px;
     height: 7vh;
+    min-height: 7vh;
     border-radius: 60px;
     padding: 8px 10px;
 }
 
 .isSettings {
     width: 20vw;
-    height: 50vh;
+    height: 70vh;
     border-radius: 18px;
     padding: 8px 10px;
 }

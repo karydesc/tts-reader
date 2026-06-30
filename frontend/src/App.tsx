@@ -33,12 +33,13 @@ export default function App() {
     const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
     const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice | null>(null);
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-    const [settingsStack, setSettingsStack] = useState<MenuItem[][]>([]);
+    const [menuViewStack, setMenuViewStack] = useState<string[]>([]);
     const [playButtonState, setPlayButtonState] = useState(false);
     const [textChanged, setTextChanged] = useState<boolean>(false);
     const [showWordBar, setShowWordBar] = useState(false);
     const [currentWord, setCurrentWord] = useState<string>("");
     const [readingSpeed, setReadingSpeed] = useState<ReadingSpeed>(ReadingSpeed.NORMAL);
+    const [currentLanguage, setCurrentLanguage] = useState<string>("en");
 
     const [theme, setTheme] = useState<ThemeState>({
         appBackground: "#a6d4ff",
@@ -53,9 +54,15 @@ export default function App() {
     const playStateRef = useRef<boolean>(false);
     const readSpeedRef = useRef<ReadingSpeed>(ReadingSpeed.NORMAL);
 
-    useEffect(() => { sentenceIdRef.current = currentSentenceID; }, [currentSentenceID]);
-    useEffect(() => { playStateRef.current = playButtonState; }, [playButtonState]);
-    useEffect(() => { readSpeedRef.current = readingSpeed; }, [readingSpeed]);
+    useEffect(() => {
+        sentenceIdRef.current = currentSentenceID;
+    }, [currentSentenceID]);
+    useEffect(() => {
+        playStateRef.current = playButtonState;
+    }, [playButtonState]);
+    useEffect(() => {
+        readSpeedRef.current = readingSpeed;
+    }, [readingSpeed]);
 
     canvasRef.current?.addEventListener("input", () => {
         setTextChanged(true);
@@ -101,7 +108,8 @@ export default function App() {
 
         let sentenceIdCounter = 0;
         const text = canvasRef.current.textContent ?? "";
-        const segmenter = new Intl.Segmenter("en", { granularity: "sentence" })
+        const segmentationLocale = currentLanguage === "all" ? "en" : currentLanguage;
+        const segmenter = new Intl.Segmenter(segmentationLocale, { granularity: "sentence" })
         const segments = Array.from(segmenter.segment(text));
 
         const newSentences = segments.map((seg, index): SentenceItem => {
@@ -151,128 +159,140 @@ export default function App() {
         );
     }
 
+    function handleLanguageChange(locale: string) {
+        setCurrentLanguage(locale);
+        const matchingVoices = voices.filter(v => v.lang.startsWith(locale.split('-')[0]));
+        if (matchingVoices.length > 0) {
+            setCurrentVoice(matchingVoices[0]);
+            voiceRef.current = matchingVoices[0];
+        }
+        setTextChanged(true);
+    }
+
+    const themeMenu: MenuItem[] = [
+        {
+            kind: "colorPicker",
+            label: "App Background",
+            value: theme.appBackground,
+            onChange: updateThemeColor("appBackground")
+        },
+        {
+            kind: "colorPicker",
+            label: "Control/Word Bar",
+            value: theme.floatingBarBackground,
+            onChange: updateThemeColor("floatingBarBackground")
+        },
+        {
+            kind: "colorPicker",
+            label: "Canvas Top",
+            value: theme.canvasColor1,
+            onChange: updateThemeColor("canvasColor1")
+        },
+        {
+            kind: "colorPicker",
+            label: "Canvas Bottom",
+            value: theme.canvasColor2,
+            onChange: updateThemeColor("canvasColor2")
+        },
+        { kind: "action", label: "Reset Theme", action: resetThemeColor },
+    ];
+
+    const speedMenu: MenuItem[] = [
+        {
+            label: "0.5x", action: () => {
+                setReadingSpeed(ReadingSpeed.SLOWEST);
+                closeMenu();
+                handlePlayback(sentenceIdRef.current);
+            }, selected: readingSpeed === ReadingSpeed.SLOWEST
+        },
+        {
+            label: "0.75x", action: () => {
+                setReadingSpeed(ReadingSpeed.SLOW);
+                closeMenu();
+                handlePlayback(sentenceIdRef.current);
+            }, selected: readingSpeed === ReadingSpeed.SLOW
+        },
+        {
+            label: "1x", action: () => {
+                setReadingSpeed(ReadingSpeed.NORMAL);
+                closeMenu();
+                handlePlayback(sentenceIdRef.current);
+            }, selected: readingSpeed === ReadingSpeed.NORMAL
+        },
+        {
+            label: "1.25x", action: () => {
+                setReadingSpeed(ReadingSpeed.FAST);
+                closeMenu();
+                handlePlayback(sentenceIdRef.current);
+            }, selected: readingSpeed === ReadingSpeed.FAST
+        },
+        {
+            label: "1.5x", action: () => {
+                setReadingSpeed(ReadingSpeed.FASTER);
+                closeMenu();
+                handlePlayback(sentenceIdRef.current);
+            }, selected: readingSpeed === ReadingSpeed.FASTER
+        },
+        {
+            label: "2x", action: () => {
+                setReadingSpeed(ReadingSpeed.FASTEST);
+                closeMenu();
+                handlePlayback(sentenceIdRef.current);
+            }, selected: readingSpeed === ReadingSpeed.FASTEST
+        }
+    ];
+
+    const engineMenu: MenuItem[] = [
+        {
+            label: "Native Browser TTS",
+            action: () => {
+                handleEngineChange(SpeechEngine.NATIVE);
+                closeMenu();
+            },
+            selected: selectedEngine === SpeechEngine.NATIVE
+        },
+        {
+            label: "Piper TTS (Cloud)",
+            action: () => {
+                handleEngineChange(SpeechEngine.PIPER);
+                closeMenu();
+            },
+            selected: selectedEngine === SpeechEngine.PIPER
+        }
+    ];
+
+    const languageMenu: MenuItem[] = [
+        { label: "All", action: () => handleLanguageChange("all"), selected: currentLanguage === 'all' },
+        { label: "English", action: () => handleLanguageChange("en"), selected: currentLanguage === 'en' },
+        { label: "French", action: () => handleLanguageChange("fr"), selected: currentLanguage === 'fr' },
+        { label: "Spanish", action: () => handleLanguageChange("es"), selected: currentLanguage === 'es' },
+        { label: "Greek", action: () => handleLanguageChange("el"), selected: currentLanguage === 'el' }
+    ];
+
+    const getActiveVoicesMenu = (): MenuItem[] => {
+        return voices
+            .filter(voice => voice.lang.includes(currentLanguage) || currentLanguage === "all")
+            .map((voice): MenuItem => ({
+                label: voice.name,
+                action: () => {
+                    setCurrentVoice(voice);
+                    voiceRef.current = voice;
+                    closeMenu();
+                    if (sentenceIdRef.current !== "-1") {
+                        handlePlayback(sentenceIdRef.current);
+                    }
+                },
+                selected: currentVoice ? currentVoice.name === voice.name : false
+            }));
+    };
+
     const settingsMenu: MenuItem[] = [
-        {
-            label: "App Theme",
-            icon: "colorpicker",
-            submenu: [
-                {
-                    kind: "colorPicker",
-                    label: "App Background",
-                    value: theme.appBackground,
-                    onChange: updateThemeColor("appBackground")
-                },
-                {
-                    kind: "colorPicker",
-                    label: "Control/Word Bar",
-                    value: theme.floatingBarBackground,
-                    onChange: updateThemeColor("floatingBarBackground")
-                },
-                {
-                    kind: "colorPicker",
-                    label: "Canvas Top",
-                    value: theme.canvasColor1,
-                    onChange: updateThemeColor("canvasColor1")
-                },
-                {
-                    kind: "colorPicker",
-                    label: "Canvas Bottom",
-                    value: theme.canvasColor2,
-                    onChange: updateThemeColor("canvasColor2")
-                },
-                { kind: "action", label: "Reset Theme", action: resetThemeColor },
-            ],
-        },
-        {
-            label: "Upload File",
-            icon: "upload",
-            action: () => console.log("upload"),
-        },
-        {
-            label: "Reading Speed",
-            icon: "speed",
-            submenu: [
-                {
-                    label: "0.5x", action: () => {
-                        setReadingSpeed(ReadingSpeed.SLOWEST);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current);
-                    }, selected: readingSpeed == ReadingSpeed.SLOWEST
-                },
-                {
-                    label: "0.75x", action: () => {
-                        setReadingSpeed(ReadingSpeed.SLOW);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current);
-                    }, selected: readingSpeed == ReadingSpeed.SLOW
-                },
-                {
-                    label: "1x", action: () => {
-                        setReadingSpeed(ReadingSpeed.NORMAL);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current);
-                    }, selected: readingSpeed == ReadingSpeed.NORMAL
-                },
-                {
-                    label: "1.25x", action: () => {
-                        setReadingSpeed(ReadingSpeed.FAST);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current);
-                    }, selected: readingSpeed == ReadingSpeed.FAST
-                },
-                {
-                    label: "1.5x", action: () => {
-                        setReadingSpeed(ReadingSpeed.FASTER);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current);
-                    }, selected: readingSpeed == ReadingSpeed.FASTER
-                },
-                {
-                    label: "2x", action: () => {
-                        setReadingSpeed(ReadingSpeed.FASTEST);
-                        closeMenu();
-                        handlePlayback(sentenceIdRef.current);
-                    }, selected: readingSpeed == ReadingSpeed.FASTEST
-                }
-            ],
-        },
-        {
-            label: "Voices",
-            submenu: voices.map((value): MenuItem => {
-                return {
-                    label: value.name,
-                    action: () => {
-                        setCurrentVoice(value);
-                        voiceRef.current = value;
-                        closeMenu();
-
-                        if (sentenceIdRef.current !== "-1") {
-                            handlePlayback(sentenceIdRef.current);
-
-                            if (!playStateRef.current) {
-                                setTimeout(() => tts.pause(), 50);
-                            }
-                        }
-                    },
-                    selected: currentVoice ? currentVoice.name == value.name : false
-                }
-            })
-        },
-        {
-            label: "Speech Engine",
-            submenu: [
-                {
-                    label: "Native Browser TTS",
-                    action: () => { handleEngineChange(SpeechEngine.NATIVE); closeMenu(); },
-                    selected: selectedEngine === SpeechEngine.NATIVE
-                },
-                {
-                    label: "Piper TTS (Cloud)",
-                    action: () => { handleEngineChange(SpeechEngine.PIPER); closeMenu();},
-                    selected: selectedEngine === SpeechEngine.PIPER
-                }
-            ]
-        },
+        { label: "App Theme", icon: "colorpicker", action: () => setMenuViewStack(prev => [...prev, "theme"]) },
+        { label: "Upload File", icon: "upload", action: () => console.log("upload") },
+        { label: "Reading Speed", icon: "speed", action: () => setMenuViewStack(prev => [...prev, "speed"]) },
+        { label: "Voices", action: () => setMenuViewStack(prev => [...prev, "voices"]) },
+        { label: "Languages", action: () => setMenuViewStack(prev => [...prev, "languages"]) },
+        { label: "Speech Engine", action: () => setMenuViewStack(prev => [...prev, "engine"]) },
         {
             label: showWordBar ? "Hide WordBar" : "Show WordBar",
             action: () => {
@@ -281,6 +301,18 @@ export default function App() {
             },
         }
     ];
+
+    const getActiveMenuItems = (): MenuItem[] => {
+        const currentView = menuViewStack.at(-1);
+        switch (currentView) {
+            case "theme": return themeMenu;
+            case "speed": return speedMenu;
+            case "engine": return engineMenu;
+            case "languages": return languageMenu;
+            case "voices": return getActiveVoicesMenu();
+            default: return settingsMenu;
+        }
+    };
 
     const themeVars = {
         "--app-background": theme.appBackground,
@@ -307,25 +339,19 @@ export default function App() {
     }
 
     function openSettings() {
-        setSettingsStack([settingsMenu]);
+        setMenuViewStack(["main"]);
         setPanelState("settings");
     }
 
     function closeMenu() {
         setPanelState("closed");
         setTimeout(() => {
-            setSettingsStack([]);
+            setMenuViewStack([]);
         }, 500);
     }
 
     function handleMenuItemClick(item: ActionMenuItem) {
-        const submenu = item.submenu;
-
-        if (submenu) {
-            setSettingsStack(prev => [...prev, submenu]);
-        } else {
-            item.action?.();
-        }
+        item.action?.();
     }
 
     function handleForwardBackward(value: string) {
@@ -339,11 +365,11 @@ export default function App() {
     }
 
     function handleBack() {
-        if (settingsStack.length === 1) {
+        if (menuViewStack.length === 1) {
             closeMenu();
             return;
         }
-        setSettingsStack(prev => prev.slice(0, -1));
+        setMenuViewStack(prev => prev.slice(0, -1));
     }
 
     return (
@@ -367,10 +393,10 @@ export default function App() {
                 }
                 menu={
                     <Menu
-                        items={settingsStack.at(-1) ?? []}
+                        items={getActiveMenuItems()}
                         onItemClick={handleMenuItemClick}
                         onBack={handleBack}
-                        canGoBack={settingsStack.length > 1}
+                        canGoBack={menuViewStack.length > 1}
                     />
                 }
                 user={
