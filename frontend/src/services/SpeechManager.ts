@@ -12,6 +12,7 @@ export const ReadingSpeed = {
     FASTER: 1.5,
     FASTEST: 2
 } as const;
+
 export type ReadingSpeed = typeof ReadingSpeed[keyof typeof ReadingSpeed];
 
 export class SpeechManager {
