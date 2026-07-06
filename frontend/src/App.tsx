@@ -23,7 +23,7 @@ const defaultTheme: ThemeState = {
     floatingBarBackground: "#0b102f",
     canvasColor1: "#091f55",
     canvasColor2: "#357cc7",
-}
+};
 
 const tts = new SpeechManager(SpeechEngine.LOCAL);
 
@@ -63,10 +63,7 @@ export default function App() {
         readSpeedRef.current = readingSpeed;
     }, [readingSpeed]);
 
-
-
     useEffect(() => {
-
         const updateVoices = () => {
             const loadedVoices = speechSynthesis.getVoices();
             setVoices(loadedVoices);
@@ -80,11 +77,8 @@ export default function App() {
         };
         updateVoices();
         speechSynthesis.addEventListener("voiceschanged", updateVoices);
-        canvasRef.current?.addEventListener("input", () => {
-        setTextChanged(true);
-    })
+
         return () => speechSynthesis.removeEventListener("voiceschanged", updateVoices);
-        
     }, []);
 
     function updateThemeColor(key: keyof ThemeState) {
@@ -320,7 +314,7 @@ export default function App() {
 
     const themeVars = {
         "--app-background": theme.appBackground,
-        "--floating-bar-background": theme.floatingBarBackground,
+        "--floating-bar-background": `${theme.floatingBarBackground}90`,
         "--canvasColor1": theme.canvasColor1,
         "--canvasColor2": theme.canvasColor2,
     } as CSSProperties;

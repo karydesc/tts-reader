@@ -75,7 +75,7 @@ export class SpeechManager {
             }
             case SpeechEngine.SERVER: {
                 const encodedText = encodeURIComponent(text);
-                const url = `http://192.168.4.62:8080/api/tts/generate?text=${encodedText}&speed=${rate}`;
+                const url = `http://localhost:8080/api/tts/generate?text=${encodedText}`;
                 try {
                     this.currentFetchController = new AbortController();
                     const res = await fetch(url, { signal: this.currentFetchController.signal });
@@ -89,7 +89,7 @@ export class SpeechManager {
                     const audioUrl = URL.createObjectURL(blob);
                     const audio = new Audio(audioUrl);
                     this.activeAudioElement = audio;
-
+                    audio.playbackRate = rate;
                     
                     audio.onplay = () => {
                         if (myPlayId === this.currentPlayId) onBoundary(0, text.length);
