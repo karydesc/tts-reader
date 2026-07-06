@@ -77,11 +77,11 @@
 			<version>${kotlin.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.jetbrains.kotlin</groupId>
-			<artifactId>kotlin-test</artifactId>
-			<version>${kotlin.version}</version>
-			<scope>test</scope>
+			<groupId>org.pitest.voices</groupId>
+			<artifactId>openvoice-phonemizer</artifactId>
+			<version>0.0.9</version>
 		</dependency>
+
 
 	</dependencies>
 
