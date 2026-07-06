@@ -11,14 +11,13 @@ type Prop = {
     currentSentenceID: string,
     barShown: boolean,
     currentWord: string,
+    onInput: () => void
 }
 
-export default function ReadingCanvas({isPlaying, canvasRef, sentences, currentSentenceID, onClick, barShown, currentWord}: Prop) {
+export default function ReadingCanvas({isPlaying, canvasRef, sentences, currentSentenceID, onClick, barShown, currentWord, onInput}: Prop) {
     return (
-
         <div style={{ width: '100%', display: 'flex',flexDirection:'column', justifyContent: 'center', alignItems: 'center' }}>
             <div className={`${styles.wordBar} ${barShown? styles.shown : styles.hidden}`} contentEditable={false}> {currentWord} </div>
-
             {isPlaying && (
                 <div className={`${styles.canvas} ${barShown? styles.shown : styles.hidden}`}>
                     {sentences.map((sentence) => {
@@ -38,14 +37,13 @@ export default function ReadingCanvas({isPlaying, canvasRef, sentences, currentS
                     })}
                 </div>
             )}
-
             <div
                 ref={canvasRef}
                 className={`${styles.canvas} ${barShown? styles.shown : styles.hidden}`}
                 contentEditable="plaintext-only"
                 style={{ display: isPlaying ? 'none' : 'block' }}
+                onInput={onInput}
             />
-
         </div>
     )
 }

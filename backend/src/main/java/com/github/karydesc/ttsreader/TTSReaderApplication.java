@@ -4,10 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TtsreaderApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(TtsreaderApplication.class, args);
-	}
-
+public class TTSReaderApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(TTSReaderApplication.class, args);
+    }
 }

@@ -25,10 +25,10 @@ const defaultTheme: ThemeState = {
     canvasColor2: "#357cc7",
 }
 
-const tts = new SpeechManager(SpeechEngine.NATIVE);
+const tts = new SpeechManager(SpeechEngine.LOCAL);
 
 export default function App() {
-    const [selectedEngine, setSelectedEngine] = useState<SpeechEngine>(SpeechEngine.NATIVE);
+    const [selectedEngine, setSelectedEngine] = useState<SpeechEngine>(SpeechEngine.LOCAL);
     const [sentences, setSentences] = useState<SentenceItem[]>([]);
     const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
     const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice | null>(null);
@@ -39,7 +39,6 @@ export default function App() {
     const [showWordBar, setShowWordBar] = useState(false);
     const [currentWord, setCurrentWord] = useState<string>("");
     const [readingSpeed, setReadingSpeed] = useState<ReadingSpeed>(ReadingSpeed.NORMAL);
-    const [currentLanguage, setCurrentLanguage] = useState<string>("en");
 
     const [theme, setTheme] = useState<ThemeState>({
         appBackground: "#a6d4ff",
@@ -64,11 +63,10 @@ export default function App() {
         readSpeedRef.current = readingSpeed;
     }, [readingSpeed]);
 
-    canvasRef.current?.addEventListener("input", () => {
-        setTextChanged(true);
-    })
+
 
     useEffect(() => {
+
         const updateVoices = () => {
             const loadedVoices = speechSynthesis.getVoices();
             setVoices(loadedVoices);
@@ -82,7 +80,11 @@ export default function App() {
         };
         updateVoices();
         speechSynthesis.addEventListener("voiceschanged", updateVoices);
+        canvasRef.current?.addEventListener("input", () => {
+        setTextChanged(true);
+    })
         return () => speechSynthesis.removeEventListener("voiceschanged", updateVoices);
+        
     }, []);
 
     function updateThemeColor(key: keyof ThemeState) {
@@ -101,6 +103,9 @@ export default function App() {
     function handleEngineChange(engine: SpeechEngine) {
         tts.setEngine(engine);
         setSelectedEngine(engine);
+        if (playButtonState){
+            handlePlayback(currentSentenceID)
+        }
     }
 
     function handleSegmentation(): SentenceItem[] {
@@ -108,7 +113,7 @@ export default function App() {
 
         let sentenceIdCounter = 0;
         const text = canvasRef.current.textContent ?? "";
-        const segmentationLocale = currentLanguage === "all" ? "en" : currentLanguage;
+        const segmentationLocale = tts.getCurrentLanguage() === "all" ? "en" : tts.getCurrentLanguage();
         const segmenter = new Intl.Segmenter(segmentationLocale, { granularity: "sentence" })
         const segments = Array.from(segmenter.segment(text));
 
@@ -160,7 +165,7 @@ export default function App() {
     }
 
     function handleLanguageChange(locale: string) {
-        setCurrentLanguage(locale);
+        tts.setCurrentLanguage(locale);
         const matchingVoices = voices.filter(v => v.lang.startsWith(locale.split('-')[0]));
         if (matchingVoices.length > 0) {
             setCurrentVoice(matchingVoices[0]);
@@ -244,35 +249,34 @@ export default function App() {
 
     const engineMenu: MenuItem[] = [
         {
-            label: "Native Browser TTS",
+            label: "Native",
             action: () => {
-                handleEngineChange(SpeechEngine.NATIVE);
+                handleEngineChange(SpeechEngine.LOCAL);
                 closeMenu();
             },
-            selected: selectedEngine === SpeechEngine.NATIVE
+            selected: selectedEngine === SpeechEngine.LOCAL
         },
         {
-            label: "Piper TTS (Cloud)",
+            label: "Cloud",
             action: () => {
-                handleEngineChange(SpeechEngine.PIPER);
+                handleEngineChange(SpeechEngine.SERVER);
                 closeMenu();
             },
-            selected: selectedEngine === SpeechEngine.PIPER
+            selected: selectedEngine === SpeechEngine.SERVER
         }
     ];
 
     const languageMenu: MenuItem[] = [
-        { label: "All", action: () => handleLanguageChange("all"), selected: currentLanguage === 'all' },
-        { label: "English", action: () => handleLanguageChange("en"), selected: currentLanguage === 'en' },
-        { label: "French", action: () => handleLanguageChange("fr"), selected: currentLanguage === 'fr' },
-        { label: "Spanish", action: () => handleLanguageChange("es"), selected: currentLanguage === 'es' },
-        { label: "Greek", action: () => handleLanguageChange("el"), selected: currentLanguage === 'el' }
+        { label: "All", action: () => handleLanguageChange("all"), selected: tts.getCurrentLanguage() === 'all' },
+        { label: "English", action: () => handleLanguageChange("en"), selected: tts.getCurrentLanguage() === 'en' },
+        { label: "French", action: () => handleLanguageChange("fr"), selected: tts.getCurrentLanguage() === 'fr' },
+        { label: "Spanish", action: () => handleLanguageChange("es"), selected: tts.getCurrentLanguage() === 'es' },
+        { label: "Greek", action: () => handleLanguageChange("el"), selected: tts.getCurrentLanguage() === 'el' }
     ];
 
     const getActiveVoicesMenu = (): MenuItem[] => {
-        return voices
-            .filter(voice => voice.lang.includes(currentLanguage) || currentLanguage === "all")
-            .map((voice): MenuItem => ({
+        return tts.getNativeVoices()
+            .map((voice: SpeechSynthesisVoice): MenuItem => ({
                 label: voice.name,
                 action: () => {
                     setCurrentVoice(voice);
@@ -374,10 +378,16 @@ export default function App() {
 
     return (
         <div className="appShell" style={themeVars}>
-            <ReadingCanvas currentWord={currentWord} barShown={showWordBar}
-                           currentSentenceID={currentSentenceID.toString()} onClick={(id: number) => {
-                handlePlayback(id.toString())
-            }} sentences={sentences} isPlaying={playButtonState} canvasRef={canvasRef}/>
+            <ReadingCanvas
+                currentWord={currentWord}
+                barShown={showWordBar}
+                currentSentenceID={currentSentenceID.toString()}
+                onClick={(id: number) => { handlePlayback(id.toString()) }}
+                sentences={sentences}
+                isPlaying={playButtonState}
+                canvasRef={canvasRef}
+                onInput={() => setTextChanged(true)}
+            />
             <FloatingControlBar
                 panelState={panelState}
                 bar={

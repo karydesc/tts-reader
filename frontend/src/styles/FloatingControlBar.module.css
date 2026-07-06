@@ -161,3 +161,21 @@
     pointer-events: auto;
     transition-delay: 0.2s;
 }
+
+
+@media (max-width: 768px) {
+    .isClosed {
+        width: 90vw; 
+        height: 8vh;
+    }
+    
+    .isSettings {
+        width: 85vw;  
+        height: 65vh; 
+    }
+    
+    .isUser {
+        width: 85vw;
+        height: 55vh;
+    }
+}
