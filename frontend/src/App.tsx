@@ -18,7 +18,7 @@ type ThemeState = {
     canvasColor2: string;
 };
 
-const defaultTheme: ThemeState = {
+let defaultTheme: ThemeState = {
     appBackground: "#a6d4ff",
     floatingBarBackground: "#0b102f",
     canvasColor1: "#091f55",
@@ -41,10 +41,10 @@ export default function App() {
     const [readingSpeed, setReadingSpeed] = useState<ReadingSpeed>(ReadingSpeed.NORMAL);
 
     const [theme, setTheme] = useState<ThemeState>({
-        appBackground: "#a6d4ff",
-        floatingBarBackground: "#0b102f",
-        canvasColor1: "#091f55",
-        canvasColor2: "#357cc7",
+        appBackground: localStorage.getItem('appBackground') ?? "#a6d4ff",
+        floatingBarBackground: localStorage.getItem('floatingBarBackground') ?? "#0b102f",
+        canvasColor1: localStorage.getItem('canvasColor1') ?? "#091f55",
+        canvasColor2: localStorage.getItem('canvasColor2') ?? "#357cc7",
     });
     const [panelState, setPanelState] = useState<PanelState>("closed")
 
@@ -64,7 +64,7 @@ export default function App() {
     }, [readingSpeed]);
 
     useEffect(() => {
-        const updateVoices = () => {
+        const init = () => {
             const loadedVoices = speechSynthesis.getVoices();
             setVoices(loadedVoices);
             if (loadedVoices.length > 0) {
@@ -75,11 +75,21 @@ export default function App() {
                 });
             }
         };
-        updateVoices();
-        speechSynthesis.addEventListener("voiceschanged", updateVoices);
+        init();
+        speechSynthesis.addEventListener("voiceschanged", init);
 
-        return () => speechSynthesis.removeEventListener("voiceschanged", updateVoices);
+        return () => speechSynthesis.removeEventListener("voiceschanged", init);
     }, []);
+
+
+    useEffect(() => {
+        localStorage.setItem('appBackground', theme.appBackground);
+        localStorage.setItem('floatingBarBackground', theme.floatingBarBackground);
+        localStorage.setItem('canvasColor1', theme.canvasColor1);
+        localStorage.setItem('canvasColor2', theme.canvasColor2);
+    }, [theme]);
+
+
 
     function updateThemeColor(key: keyof ThemeState) {
         return (value: string) => {
