@@ -197,4 +197,16 @@ export class SpeechManager {
             voice.localService && (this.currentLanguage === "all" || voice.lang.startsWith(this.currentLanguage.split('-')[0]))
         );
     }
+
+
+    public async getServerVoices(): Promise<any[]> {
+        try {
+            const response = await fetch('http://localhost:8080/api/tts/voices');
+            if (!response.ok) throw new Error('Failed to fetch voices');
+            return await response.json();
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
+    }
 }
