@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import "./styles/App.css"
-import type { ActionMenuItem, MenuItem, PanelState, SentenceItem } from "./Types.ts";
+import type {ActionMenuItem, MenuItem, PanelState, SentenceItem, ServerVoice} from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
 import Menu from "./components/Menu.tsx";
 import FloatingControlBar from "./components/FloatingControlBar.tsx";
@@ -18,7 +18,7 @@ type ThemeState = {
     canvasColor2: string;
 };
 
-let defaultTheme: ThemeState = {
+const defaultTheme: ThemeState = {
     appBackground: "#a6d4ff",
     floatingBarBackground: "#0b102f",
     canvasColor1: "#091f55",
@@ -31,8 +31,13 @@ export default function App() {
     const [selectedEngine, setSelectedEngine] = useState<SpeechEngine>(SpeechEngine.LOCAL);
     const [sentences, setSentences] = useState<SentenceItem[]>([]);
     const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
-    const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice | null>(null);
-    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+    const [currentServerVoice, setCurrentServerVoice] = useState<ServerVoice>();
+    const [currentLocalVoice, setCurrentLocalVoice] = useState<SpeechSynthesisVoice>();
+
+    const [localVoices, setLocalVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [serverVoices, setServerVoices] = useState<ServerVoice[]>([]);
+
     const [menuViewStack, setMenuViewStack] = useState<string[]>([]);
     const [playButtonState, setPlayButtonState] = useState(false);
     const [textChanged, setTextChanged] = useState<boolean>(false);
@@ -48,7 +53,7 @@ export default function App() {
     });
     const [panelState, setPanelState] = useState<PanelState>("closed")
 
-    const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+    const voiceRef = useRef<SpeechSynthesisVoice | ServerVoice | null>(null);
     const sentenceIdRef = useRef<string>("-1");
     const playStateRef = useRef<boolean>(false);
     const readSpeedRef = useRef<ReadingSpeed>(ReadingSpeed.NORMAL);
@@ -64,23 +69,52 @@ export default function App() {
     }, [readingSpeed]);
 
     useEffect(() => {
-        const init = () => {
+        async function fetchServerVoices() {
+            try {
+                const request = await fetch("http://localhost:5100/api/tts/voices");
+                if (!request.ok) throw new Error("Failed to load voices");
+                const data = await request.json();
+
+                const mappedVoices: ServerVoice[] = data.map((voice: any) => ({
+                    id: voice.id,
+                    name: voice.name,
+                    lang: voice.language,
+                    quality: voice.quality
+                }));
+
+                setServerVoices(mappedVoices);
+                if (mappedVoices.length > 0) {
+                    setCurrentServerVoice(mappedVoices[0]);
+                    if (selectedEngine === SpeechEngine.SERVER) {
+                        voiceRef.current = mappedVoices[0];
+                    }
+                }
+            } catch (error) {
+                console.error("Error populating server voice engine:", error);
+            }
+        }
+        fetchServerVoices();
+    }, []);
+
+    useEffect(() => {
+        const initLocalVoices = () => {
             const loadedVoices = speechSynthesis.getVoices();
-            setVoices(loadedVoices);
+            setLocalVoices(loadedVoices);
             if (loadedVoices.length > 0) {
-                setCurrentVoice(prev => {
+                setCurrentLocalVoice(prev => {
                     const newVoice = prev ? prev : loadedVoices[0];
-                    voiceRef.current = newVoice;
+                    if (selectedEngine === SpeechEngine.LOCAL) {
+                        voiceRef.current = newVoice;
+                    }
                     return newVoice;
                 });
             }
         };
-        init();
-        speechSynthesis.addEventListener("voiceschanged", init);
 
-        return () => speechSynthesis.removeEventListener("voiceschanged", init);
-    }, []);
-
+        initLocalVoices();
+        speechSynthesis.addEventListener("voiceschanged", initLocalVoices);
+        return () => speechSynthesis.removeEventListener("voiceschanged", initLocalVoices);
+    }, [selectedEngine]);
 
     useEffect(() => {
         localStorage.setItem('appBackground', theme.appBackground);
@@ -88,8 +122,6 @@ export default function App() {
         localStorage.setItem('canvasColor1', theme.canvasColor1);
         localStorage.setItem('canvasColor2', theme.canvasColor2);
     }, [theme]);
-
-
 
     function updateThemeColor(key: keyof ThemeState) {
         return (value: string) => {
@@ -107,6 +139,13 @@ export default function App() {
     function handleEngineChange(engine: SpeechEngine) {
         tts.setEngine(engine);
         setSelectedEngine(engine);
+
+        if (engine === SpeechEngine.LOCAL && currentLocalVoice) {
+            voiceRef.current = currentLocalVoice;
+        } else if (engine === SpeechEngine.SERVER && currentServerVoice) {
+            voiceRef.current = currentServerVoice;
+        }
+
         if (playButtonState){
             handlePlayback(currentSentenceID)
         }
@@ -170,10 +209,20 @@ export default function App() {
 
     function handleLanguageChange(locale: string) {
         tts.setCurrentLanguage(locale);
-        const matchingVoices = voices.filter(v => v.lang.startsWith(locale.split('-')[0]));
-        if (matchingVoices.length > 0) {
-            setCurrentVoice(matchingVoices[0]);
-            voiceRef.current = matchingVoices[0];
+        const normalCode = locale.split('-')[0];
+
+        if (selectedEngine === SpeechEngine.LOCAL) {
+            const matching = localVoices.filter(v => v.lang.startsWith(normalCode));
+            if (matching.length > 0) {
+                setCurrentLocalVoice(matching[0]);
+                voiceRef.current = matching[0];
+            }
+        } else {
+            const matching = serverVoices.filter(v => v.lang.startsWith(normalCode));
+            if (matching.length > 0) {
+                setCurrentServerVoice(matching[0]);
+                voiceRef.current = matching[0];
+            }
         }
         setTextChanged(true);
     }
@@ -279,19 +328,33 @@ export default function App() {
     ];
 
     const getActiveVoicesMenu = (): MenuItem[] => {
-        return tts.getNativeVoices()
-            .map((voice: SpeechSynthesisVoice): MenuItem => ({
+        if (selectedEngine === SpeechEngine.LOCAL) {
+            return localVoices.map((voice: SpeechSynthesisVoice): MenuItem => ({
                 label: voice.name,
                 action: () => {
-                    setCurrentVoice(voice);
+                    setCurrentLocalVoice(voice);
                     voiceRef.current = voice;
                     closeMenu();
                     if (sentenceIdRef.current !== "-1") {
                         handlePlayback(sentenceIdRef.current);
                     }
                 },
-                selected: currentVoice ? currentVoice.name === voice.name : false
+                selected: currentLocalVoice ? currentLocalVoice.name === voice.name : false
             }));
+        } else {
+            return serverVoices.filter(x=>x.lang==tts.getCurrentLanguage()).map((voice: ServerVoice): MenuItem => ({
+                label: `${voice.name} (${voice.quality})`,
+                action: () => {
+                    setCurrentServerVoice(voice);
+                    voiceRef.current = voice;
+                    closeMenu();
+                    if (sentenceIdRef.current !== "-1") {
+                        handlePlayback(sentenceIdRef.current);
+                    }
+                },
+                selected: currentServerVoice ? currentServerVoice.id === voice.id : false
+            }));
+        }
     };
 
     const settingsMenu: MenuItem[] = [
@@ -324,7 +387,7 @@ export default function App() {
 
     const themeVars = {
         "--app-background": theme.appBackground,
-        "--floating-bar-background": `${theme.floatingBarBackground}90`,
+        "--floating-bar-background": `${theme.floatingBarBackground}92`,
         "--canvasColor1": theme.canvasColor1,
         "--canvasColor2": theme.canvasColor2,
     } as CSSProperties;

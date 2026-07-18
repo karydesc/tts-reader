@@ -31,3 +31,11 @@ export type PanelState = "closed" | "settings" | "user"
 
 export type SentenceItem =
     {isNewline: boolean; text: string; id: string; key: string}
+
+
+export type ServerVoice = {
+    name: string;
+    id: number;
+    lang: string;
+    quality: "low" | "medium" | "high";
+}

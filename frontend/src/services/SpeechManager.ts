@@ -1,3 +1,5 @@
+import type {ServerVoice} from "../Types.ts";
+
 export const SpeechEngine = {
     LOCAL: 0,
     SERVER: 1
@@ -74,8 +76,16 @@ export class SpeechManager {
                 break;
             }
             case SpeechEngine.SERVER: {
+                let voiceName = "";
+                if (voice && typeof voice === 'object' && 'name' in voice) {
+                    voiceName = (voice as any).name;
+                } else if (typeof voice === 'string') {
+                    voiceName = voice;
+                }
+
                 const encodedText = encodeURIComponent(text);
-                const url = `http://localhost:8080/api/tts/generate?text=${encodedText}`;
+                const url = `http://localhost:5100/api/tts/generate?text=${encodedText}&voice=${encodeURIComponent(voiceName)}`;
+
                 try {
                     this.currentFetchController = new AbortController();
                     const res = await fetch(url, { signal: this.currentFetchController.signal });
@@ -90,11 +100,10 @@ export class SpeechManager {
                     const audio = new Audio(audioUrl);
                     this.activeAudioElement = audio;
                     audio.playbackRate = rate;
-                    
+
                     audio.onplay = () => {
                         if (myPlayId === this.currentPlayId) onBoundary(0, text.length);
                     };
-
                     audio.onended = () => {
                         URL.revokeObjectURL(audioUrl);
                         if (myPlayId === this.currentPlayId) {
@@ -102,7 +111,6 @@ export class SpeechManager {
                             onEnd();
                         }
                     };
-
                     audio.onerror = (e) => {
                         console.error("Server audio stream failed:", e);
                         URL.revokeObjectURL(audioUrl);
@@ -111,7 +119,6 @@ export class SpeechManager {
                             onEnd();
                         }
                     };
-
                     audio.play().catch((err) => {
                         console.error("Playback block cleared:", err);
                         URL.revokeObjectURL(audioUrl);
@@ -120,6 +127,7 @@ export class SpeechManager {
                     this.currentFetchController = undefined;
                 } catch (err) {
                     if ((err as any)?.name === 'AbortError') {
+                        // handle intentional audio termination safely
                     } else {
                         console.error("Failed to fetch server audio:", err);
                     }
@@ -199,14 +207,19 @@ export class SpeechManager {
     }
 
 
-    public async getServerVoices(): Promise<any[]> {
-        try {
-            const response = await fetch('http://localhost:8080/api/tts/voices');
-            if (!response.ok) throw new Error('Failed to fetch voices');
-            return await response.json();
-        } catch (error) {
-            console.error(error);
-            return [];
+    public async getServerVoices(): Promise<ServerVoice[]> {
+        const request = await fetch("http://localhost:5100/api/tts/voices");
+        if (!request.ok) {
+            throw new Error("Something went wrong fetching voices.");
         }
+        const data = await request.json();
+
+        // map the backend keys to your frontend type layout
+        return data.map((voice: any) => ({
+            id: voice.id,
+            name: voice.name,
+            lang: voice.language, // translates "language" to "lang"
+            quality: voice.quality
+        }));
     }
 }
