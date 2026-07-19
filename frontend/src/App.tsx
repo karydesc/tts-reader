@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import {useEffect, useRef, useState } from 'react';
+import { useTheme } from './hooks/useTheme';
 import "./styles/App.css"
 import type {ActionMenuItem, MenuItem, PanelState, SentenceItem, ServerVoice} from "./Types.ts";
 import ReadingCanvas from "./components/ReadingCanvas.tsx";
@@ -11,23 +12,11 @@ import { SpeechManager, SpeechEngine, ReadingSpeed } from "./services/SpeechMana
 
 const canvasRef = React.createRef<HTMLDivElement>()
 
-type ThemeState = {
-    appBackground: string;
-    floatingBarBackground: string;
-    canvasColor1: string;
-    canvasColor2: string;
-};
-
-const defaultTheme: ThemeState = {
-    appBackground: "#a6d4ff",
-    floatingBarBackground: "#0b102f",
-    canvasColor1: "#091f55",
-    canvasColor2: "#357cc7",
-};
-
 const tts = new SpeechManager(SpeechEngine.LOCAL);
 
 export default function App() {
+    const { themeVars, theme, updateThemeColor, resetThemeColor } = useTheme();
+
     const [selectedEngine, setSelectedEngine] = useState<SpeechEngine>(SpeechEngine.LOCAL);
     const [sentences, setSentences] = useState<SentenceItem[]>([]);
     const [currentSentenceID, setCurrentSentenceID] = useState<string>("-1");
@@ -45,12 +34,7 @@ export default function App() {
     const [currentWord, setCurrentWord] = useState<string>("");
     const [readingSpeed, setReadingSpeed] = useState<ReadingSpeed>(ReadingSpeed.NORMAL);
 
-    const [theme, setTheme] = useState<ThemeState>({
-        appBackground: localStorage.getItem('appBackground') ?? "#a6d4ff",
-        floatingBarBackground: localStorage.getItem('floatingBarBackground') ?? "#0b102f",
-        canvasColor1: localStorage.getItem('canvasColor1') ?? "#091f55",
-        canvasColor2: localStorage.getItem('canvasColor2') ?? "#357cc7",
-    });
+
     const [panelState, setPanelState] = useState<PanelState>("closed")
 
     const voiceRef = useRef<SpeechSynthesisVoice | ServerVoice | null>(null);
@@ -75,10 +59,10 @@ export default function App() {
                 if (!request.ok) throw new Error("Failed to load voices");
                 const data = await request.json();
 
-                const mappedVoices: ServerVoice[] = data.map((voice: any) => ({
+                const mappedVoices: ServerVoice[] = data.map((voice: ServerVoice) => ({
                     id: voice.id,
                     name: voice.name,
-                    lang: voice.language,
+                    language: voice.language,
                     quality: voice.quality
                 }));
 
@@ -116,25 +100,6 @@ export default function App() {
         return () => speechSynthesis.removeEventListener("voiceschanged", initLocalVoices);
     }, [selectedEngine]);
 
-    useEffect(() => {
-        localStorage.setItem('appBackground', theme.appBackground);
-        localStorage.setItem('floatingBarBackground', theme.floatingBarBackground);
-        localStorage.setItem('canvasColor1', theme.canvasColor1);
-        localStorage.setItem('canvasColor2', theme.canvasColor2);
-    }, [theme]);
-
-    function updateThemeColor(key: keyof ThemeState) {
-        return (value: string) => {
-            setTheme((prevState) => ({
-                ...prevState,
-                [key]: value,
-            }));
-        };
-    }
-
-    function resetThemeColor() {
-        setTheme(defaultTheme)
-    }
 
     function handleEngineChange(engine: SpeechEngine) {
         tts.setEngine(engine);
@@ -218,7 +183,7 @@ export default function App() {
                 voiceRef.current = matching[0];
             }
         } else {
-            const matching = serverVoices.filter(v => v.lang.startsWith(normalCode));
+            const matching = serverVoices.filter(v => v.language.startsWith(normalCode));
             if (matching.length > 0) {
                 setCurrentServerVoice(matching[0]);
                 voiceRef.current = matching[0];
@@ -342,7 +307,7 @@ export default function App() {
                 selected: currentLocalVoice ? currentLocalVoice.name === voice.name : false
             }));
         } else {
-            return serverVoices.filter(x=>x.lang==tts.getCurrentLanguage()).map((voice: ServerVoice): MenuItem => ({
+            return serverVoices.filter(x=>x.language==tts.getCurrentLanguage()).map((voice: ServerVoice): MenuItem => ({
                 label: `${voice.name} (${voice.quality})`,
                 action: () => {
                     setCurrentServerVoice(voice);
@@ -385,12 +350,7 @@ export default function App() {
         }
     };
 
-    const themeVars = {
-        "--app-background": theme.appBackground,
-        "--floating-bar-background": `${theme.floatingBarBackground}92`,
-        "--canvasColor1": theme.canvasColor1,
-        "--canvasColor2": theme.canvasColor2,
-    } as CSSProperties;
+
 
     function togglePlay() {
         if (playButtonState) {
@@ -426,6 +386,7 @@ export default function App() {
     }
 
     function handleForwardBackward(value: string) {
+        if (!playButtonState) {return}
         let targetIdNumber = value === "f"
             ? Number(currentSentenceID) + 1
             : Number(currentSentenceID) - 1;

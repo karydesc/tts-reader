@@ -36,6 +36,6 @@ export type SentenceItem =
 export type ServerVoice = {
     name: string;
     id: number;
-    lang: string;
+    language: string;
     quality: "low" | "medium" | "high";
 }

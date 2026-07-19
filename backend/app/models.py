@@ -21,3 +21,4 @@ class Voice:
             "language": self.language,
             "quality": self.quality
         }
+

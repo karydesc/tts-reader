@@ -12,3 +12,4 @@ backend/*.iml
 
 **/.DS_Store
 .vscode/*
+backend/app/__pycache__/
